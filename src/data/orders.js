@@ -12,6 +12,7 @@ export const orders = [
     status: "MENUNGGU PEMBAYARAN",
     date: "2026-06-10",
     address: "Tangerang",
+    paymentMethod: "Kartu Kredit",
   },
 
   {
@@ -24,6 +25,7 @@ export const orders = [
     status: "DIKIRIM",
     date: "2026-06-11",
     address: "Jakarta",
+    paymentMethod: "Transfer Bank",
   },
 
   {
@@ -36,6 +38,7 @@ export const orders = [
     status: "SELESAI",
     date: "2026-06-12",
     address: "Bandung",
+    paymentMethod: "E-Wallet (GoPay)",
   },
 
   // =====================================
@@ -51,6 +54,7 @@ export const orders = [
     status: "DIPROSES",
     date: "2026-06-10",
     address: "Tangerang",
+    paymentMethod: "QRIS",
   },
 
   {
@@ -63,6 +67,7 @@ export const orders = [
     status: "DIKIRIM",
     date: "2026-06-11",
     address: "Jakarta",
+    paymentMethod: "E-Wallet (OVO)",
   },
 
   {
@@ -75,6 +80,7 @@ export const orders = [
     status: "SELESAI",
     date: "2026-06-12",
     address: "Surabaya",
+    paymentMethod: "Saldo Dompet BelanjaIn",
   },
 
   // =====================================
@@ -90,6 +96,7 @@ export const orders = [
     status: "MENUNGGU PEMBAYARAN",
     date: "2026-06-10",
     address: "Tangerang",
+    paymentMethod: "Kartu Kredit",
   },
 
   {
@@ -102,6 +109,7 @@ export const orders = [
     status: "DIPROSES",
     date: "2026-06-11",
     address: "Jakarta",
+    paymentMethod: "E-Wallet (Dana)",
   },
 
   {
@@ -114,5 +122,19 @@ export const orders = [
     status: "SELESAI",
     date: "2026-06-12",
     address: "Bandung",
+    paymentMethod: "Transfer Bank",
+  },
+
+  {
+    id: "ORD-010",
+    userId: 1,
+    sellerId: 3,
+    productId: 1,
+    customer: "User",
+    total: 249000,
+    status: "DIKIRIM",
+    date: "2026-06-15",
+    address: "Medan",
+    paymentMethod: "QRIS",
   },
 ];

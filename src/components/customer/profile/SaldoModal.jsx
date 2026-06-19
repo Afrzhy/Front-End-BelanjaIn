@@ -1,14 +1,16 @@
 import { CreditCard, Wallet, X, Plus } from "lucide-react";
 import { useState } from "react";
-
+import PaymentModal from "./modal/PaymentModal";
 function SaldoModal({ show, onClose, saldo, setSaldo }) {
   const [selectedAmount, setSelectedAmount] = useState(50000);
+const [customAmount, setCustomAmount] = useState("");
 
-  const [customAmount, setCustomAmount] = useState("");
 
   const [paymentMethod, setPaymentMethod] = useState("bca");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+const [paymentAmount, setPaymentAmount] = useState(0);
 
   if (!show) return null;
 
@@ -20,15 +22,21 @@ function SaldoModal({ show, onClose, saldo, setSaldo }) {
   const nominalList = [50000, 100000, 200000, 500000];
 
   const handleTopup = () => {
-    const amount = customAmount !== "" ? Number(customAmount) : selectedAmount;
+    const amount =
+  customAmount !== ""
+    ? Number(customAmount.replace(/\./g, ""))
+    : selectedAmount;
 
     if (!amount || amount < 10000) {
       setErrorMessage("Minimal top up Rp10.000");
       return;
     }
 
-    setErrorMessage("");
-    setIsSubmitting(true);
+   setErrorMessage("");
+
+setPaymentAmount(amount);
+setShowPaymentModal(true);
+return;
 
     const currentSaldo =
       Number(localStorage.getItem(`saldo_${currentUser?.id}`)) || saldo;
@@ -366,23 +374,30 @@ function SaldoModal({ show, onClose, saldo, setSaldo }) {
                 ATAU NOMINAL CUSTOM
               </p>
 
-              <input
-                type="text"
-                inputMode="numeric"
-                value={customAmount}
-                onChange={(e) =>
-                  setCustomAmount(e.target.value.replace(/\D/g, ""))
-                }
-                placeholder="Minimal Rp10.000"
-                className="
+            <input
+  type="text"
+  inputMode="numeric"
+  value={customAmount}
+  onChange={(e) => {
+    const rawValue = e.target.value.replace(/\D/g, "");
+
+    setCustomAmount(
+      rawValue
+        ? Number(rawValue).toLocaleString("id-ID")
+        : ""
+    );
+  }}
+  placeholder="Minimal Rp10.000"
+  className="
     w-full
     h-12
     border
     rounded-xl
     px-4
     outline-none
+    focus:border-blue-500
   "
-              />
+/>
 
               <p
                 className="
@@ -468,7 +483,54 @@ function SaldoModal({ show, onClose, saldo, setSaldo }) {
             </div>
           </div>
         </div>
-      </div>
+           </div>
+{console.log("showPaymentModal =", showPaymentModal)}
+      <PaymentModal
+        show={showPaymentModal}
+        paymentMethod={paymentMethod}
+        amount={paymentAmount}
+        onClose={() => {
+          const currentSaldo =
+            Number(
+              localStorage.getItem(`saldo_${currentUser?.id}`)
+            ) || saldo;
+
+          const newSaldo = currentSaldo + paymentAmount;
+
+          localStorage.setItem(
+            `saldo_${currentUser.id}`,
+            newSaldo
+          );
+
+          const newHistory = [
+            {
+              title: `Top Up ${
+                paymentMethod === "bca"
+                  ? "BCA VA"
+                  : paymentMethod === "mandiri"
+                  ? "Mandiri VA"
+                  : "QRIS"
+              }`,
+              amount: `+Rp${paymentAmount.toLocaleString(
+                "id-ID"
+              )}`,
+              type: "plus",
+              date: new Date().toLocaleDateString("id-ID"),
+            },
+            ...history,
+          ];
+
+          localStorage.setItem(
+            `saldoHistory_${currentUser?.id}`,
+            JSON.stringify(newHistory)
+          );
+
+          setSaldo(newSaldo);
+
+          setShowPaymentModal(false);
+          onClose();
+        }}
+      />
     </div>
   );
 }

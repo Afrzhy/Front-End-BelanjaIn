@@ -16,9 +16,14 @@ import {
 } from "lucide-react";
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 import logo from "../assets/logo.jpeg";
 
 function Register({ setAuthModal }) {
+  // ================= NAVIGATE =================
+  const navigate = useNavigate();
+
   // ================= ROLE =================
   const [role, setRole] = useState("pembeli");
 
@@ -102,15 +107,47 @@ function Register({ setAuthModal }) {
   };
 
   // ================= GOOGLE =================
-  const handleGoogleRegister = () => {
+  const handleGoogleRegister = (codeResponse) => {
+    // Auto-register sebagai pembeli
+    const newUser = {
+      id: "google_user_" + Date.now(),
+      nama: "Google User",
+      email: "user@gmail.com",
+      phone: "0812345678",
+      alamat: "Jakarta",
+      toko: null,
+      password: "google_login",
+      role: "pembeli",
+      loginMethod: "google",
+    };
+
+    localStorage.setItem("currentUser", JSON.stringify(newUser));
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        ...newUser,
+      }),
+    );
+
     setSuccess(true);
 
     setTimeout(() => {
       setSuccess(false);
-
       setAuthModal(null);
-    }, 2000);
+      navigate("/customer");
+    }, 1500);
   };
+
+  const handleGoogleError = () => {
+    setRegisterError("Gagal daftar dengan Google");
+  };
+
+  // Google login hook
+  const googleRegister = useGoogleLogin({
+    onSuccess: handleGoogleRegister,
+    onError: handleGoogleError,
+    flow: "implicit",
+  });
 
   return (
     <div
@@ -127,6 +164,41 @@ function Register({ setAuthModal }) {
         py-5
       "
     >
+      {/* ================= SUCCESS NOTIFICATION ================= */}
+      {success && (
+        <div
+          className="
+          fixed
+          top-6
+          right-6
+          z-[999]
+          bg-white
+          border
+          border-green-200
+          rounded-2xl
+          shadow-2xl
+          px-5
+          py-4
+          flex
+          items-center
+          gap-3
+          animate-bounce
+        "
+        >
+          <CheckCircle2 size={22} className="text-green-500" />
+
+          <div>
+            <h3 className="text-sm font-black text-slate-800">
+              Daftar Berhasil
+            </h3>
+
+            <p className="text-xs text-slate-500">
+              Berhasil daftar menggunakan Google
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ================= CARD ================= */}
       <div
         className="
@@ -763,37 +835,33 @@ text-emerald-700
 
             {/* GOOGLE */}
             <button
-              onClick={handleGoogleRegister}
+              onClick={() => googleRegister()}
               className="
-w-full
-h-14
-rounded-2xl
-border
-border-slate-200
-mt-6
-flex
-items-center
-justify-center
-gap-3
-hover:bg-slate-50
-duration-300
-"
+                w-full
+                h-14
+                rounded-2xl
+                border
+                border-slate-200
+                bg-white
+                hover:bg-slate-50
+                mt-6
+                flex
+                items-center
+                justify-center
+                gap-3
+                duration-300
+                hover:shadow-md
+                font-semibold
+                text-slate-700
+              "
             >
               <img
-                src="https://cdn-icons-png.flaticon.com/512/281/281764.png"
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
                 alt="google"
                 className="w-5 h-5"
               />
 
-              <span
-                className="
-                  text-sm
-                  font-semibold
-                  text-slate-700
-                "
-              >
-                Lanjutkan dengan Google
-              </span>
+              <span>Lanjutkan dengan Google</span>
             </button>
 
             {/* LOGIN */}

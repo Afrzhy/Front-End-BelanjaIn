@@ -43,21 +43,21 @@ export default function OrderDetailModal({
     typeof order.shippingAddress === "string"
       ? order.shippingAddress
       : order.shippingAddress?.address || order.address || order.alamat || "-";
-const formatDate = (date) => {
-  const d = new Date(date);
+  const formatDate = (date) => {
+    const d = new Date(date);
 
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
 
-  return `${day}-${month}-${year}`;
-};
+    return `${day}-${month}-${year}`;
+  };
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       <div
-  className="
+        className="
   relative
   bg-white
   w-[95%]
@@ -70,27 +70,27 @@ const formatDate = (date) => {
   flex
   flex-col
 "
->
+      >
         <div className="border-b bg-white px-5 py-4">
-  <div className="flex items-center justify-between">
-    <div>
-      <h3 className="font-black text-base text-slate-800">
-        DETAIL TRANSAKSI
-      </h3>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-black text-base text-slate-800">
+                DETAIL TRANSAKSI
+              </h3>
 
-      <p className="text-[11px] text-slate-400">
-        Informasi lengkap pemesanan
-      </p>
-    </div>
+              <p className="text-[11px] text-slate-400">
+                Informasi lengkap pemesanan
+              </p>
+            </div>
 
-    <button
-      onClick={onClose}
-      className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center"
-    >
-      <X size={18} />
-    </button>
-  </div>
-</div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 gap-4 max-h-[76vh] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-5">
@@ -113,7 +113,10 @@ const formatDate = (date) => {
           </div>
 
           <div className="bg-slate-50 rounded-3xl p-5 border border-slate-200">
-            <div className="text-sm font-bold mb-6">Status Pemesanan</div>
+            <div className="text-sm font-bold mb-2">Status Pemesanan</div>
+            <div className="text-[13px] text-slate-600 font-semibold mb-6">
+              {order.status}
+            </div>
             <div className="relative py-4">
               <div className="absolute left-6 right-6 top-1/2 h-px bg-slate-200" />
               <div className="relative flex items-center justify-between gap-3">
@@ -168,6 +171,11 @@ const formatDate = (date) => {
                     <div className="font-bold text-sm truncate">{p.name}</div>
                     <div className="text-sm text-slate-500 mt-1">
                       Rp {Number(p.price).toLocaleString("id-ID")}
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                      {p.rating && <span>⭐ {p.rating}</span>}
+                      {p.sold && <span>Terjual {p.sold}</span>}
+                      {p.trust && <span>Trust {p.trust}%</span>}
                     </div>
                   </div>
                   <div className="text-sm font-bold">{p.qty || 1}x</div>
@@ -234,36 +242,35 @@ const formatDate = (date) => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-             <button
-      onClick={() => onOpenComplaint?.(order)}
-      className="h-10 rounded-xl bg-pink-50 text-pink-600 font-bold"
-    >
-      Komplain
-    </button>
+            <button
+              onClick={() => onOpenComplaint?.(order)}
+              className="h-10 rounded-xl bg-pink-50 text-pink-600 font-bold"
+            >
+              Komplain
+            </button>
 
-    <button
-      onClick={() => onOpenTracking?.(order)}
-      className="h-10 rounded-xl border font-bold"
-    >
-      Lacak
-    </button>
+            <button
+              onClick={() => onOpenTracking?.(order)}
+              className="h-10 rounded-xl border font-bold"
+            >
+              Lacak
+            </button>
 
-    <button
-      onClick={() => onBuyAgain?.(order)}
-      className="h-10 rounded-xl bg-blue-600 text-white font-bold"
-    >
-      Beli Lagi
-    </button>
+            <button
+              onClick={() => onBuyAgain?.(order)}
+              className="h-10 rounded-xl bg-blue-600 text-white font-bold"
+            >
+              Beli Lagi
+            </button>
 
-    <button
-      onClick={onClose}
-      className="h-10 rounded-xl border font-bold"
-    >
-      Tutup
-    </button>
-
-  </div>
-</div>
+            <button
+              onClick={onClose}
+              className="h-10 rounded-xl border font-bold"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

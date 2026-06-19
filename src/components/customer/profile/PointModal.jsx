@@ -161,7 +161,6 @@ function PointModal({ show, onClose, points, history, redeemVoucher }) {
               const isRedeeming = redeemingVoucherId === voucher.id;
 
               const handleVoucherClick = () => {
-                if (alreadyOwned) return;
                 if (points < voucher.pointCost) {
                   setErrorMessage("Poin tidak cukup untuk menukar voucher.");
                   return;
@@ -176,79 +175,81 @@ function PointModal({ show, onClose, points, history, redeemVoucher }) {
                 <div
                   key={voucher.id}
                   className="
-                  bg-white
-                  rounded-3xl
-                  border
-                  p-5
-                  shadow-sm
-                "
+                    bg-white
+                    rounded-2xl
+                    border
+                    p-5
+                    shadow-sm
+                  "
                 >
                   <img
                     src={voucher.image}
                     alt={voucher.title}
                     className="
-    w-full
-    h-36
-    rounded-2xl
-    object-cover
-    mb-4
-  "
+                      w-14
+                      h-14
+                      rounded-xl
+                      object-cover
+                      mb-3
+                    "
                   />
 
-                  <h4 className="font-black">{voucher.code}</h4>
+                  <h4
+                    className="
+                      font-black
+                      text-base
+                      text-slate-900
+                      mb-1
+                    "
+                  >
+                    {voucher.code}
+                  </h4>
 
                   <p
                     className="
-                    text-sm
-                    text-slate-500
-                    min-h-[50px]
-                  "
+                      text-slate-500
+                      text-xs
+                      leading-relaxed
+                      mb-4
+                      min-h-[32px]
+                    "
                   >
                     {voucher.title}
                   </p>
 
-                  <div
-                    className="
-                    text-orange-500
-                    font-bold
-                    mt-4
-                  "
-                  >
-                    {voucher.pointCost} Poin
-                  </div>
+                  <div className="border-t pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Coins size={16} className="text-orange-500" />
+                        <span className="text-orange-500 font-black text-sm">
+                          {voucher.pointCost} Poin
+                        </span>
+                      </div>
 
-                  <button
-                    onClick={handleVoucherClick}
-                    disabled={
-                      alreadyOwned || isRedeeming || points < voucher.pointCost
-                    }
-                    className={`
-                    w-full
-                    h-11
-                    rounded-xl
-                    mt-4
-                    text-sm
-                    font-bold
-                    transition
-                    ${
-                      alreadyOwned
-                        ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                        : isRedeeming
-                          ? "bg-blue-400 text-white cursor-wait"
-                          : points >= voucher.pointCost
-                            ? "bg-slate-900 text-white hover:bg-black"
-                            : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                    }
-                  `}
-                  >
-                    {alreadyOwned
-                      ? "SUDAH DIMILIKI"
-                      : isRedeeming
-                        ? "MEMPROSES..."
-                        : points >= voucher.pointCost
-                          ? "TUKARKAN"
-                          : "POIN KURANG"}
-                  </button>
+                      <button
+  onClick={handleVoucherClick}
+  disabled={isRedeeming || points < voucher.pointCost}
+  className={`
+    px-3
+    h-8
+    rounded-full
+    text-[11px]
+    font-semibold
+    transition
+    whitespace-nowrap
+    ${
+      isRedeeming
+        ? "bg-blue-400 text-white cursor-wait"
+        : points >= voucher.pointCost
+          ? "bg-slate-900 text-white hover:bg-black"
+          : "bg-slate-200 text-slate-400 cursor-not-allowed"
+    }
+  `}
+>
+  {isRedeeming ? "PROSES..." : "TUKAR"}
+</button>
+                    </div>
+                  </div>
                 </div>
               );
             })}

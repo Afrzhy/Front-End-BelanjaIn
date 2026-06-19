@@ -2,13 +2,22 @@ import { Gift, Ticket, X, ChevronRight, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
 import { products } from "../../../data/products";
 import { useNavigate } from "react-router-dom";
-function VoucherModal({ show, onClose, vouchers }) {
+function VoucherModal({ show, onClose, vouchers, onVoucherRedeemed }) {
   const navigate = useNavigate();
   console.log(vouchers);
   console.log("MY VOUCHER", vouchers);
   const [selectedVoucher, setSelectedVoucher] = useState(
     () => vouchers?.[0] || null,
   );
+  const [vouchersData, setVouchersData] = useState(vouchers);
+
+useEffect(() => {
+  setVouchersData(vouchers);
+
+  if (!selectedVoucher && vouchers.length > 0) {
+    setSelectedVoucher(vouchers[0]);
+  }
+}, [vouchers]);
 
   if (!show) return null;
   console.log("selectedVoucher =", JSON.stringify(selectedVoucher, null, 2));
@@ -130,7 +139,7 @@ function VoucherModal({ show, onClose, vouchers }) {
                   text-slate-400
                 "
               >
-                Voucher Tersedia ({vouchers.length})
+                Voucher Tersedia ({vouchersData.length})
               </h3>
             </div>
 
@@ -143,9 +152,9 @@ function VoucherModal({ show, onClose, vouchers }) {
                 space-y-3
               "
             >
-              {vouchers.map((voucher) => (
+              {vouchersData.map((voucher) => (
                 <div
-                  key={voucher.id}
+                  key={`voucher-${voucher.id}`}
                   onClick={() => {
                     console.log("Voucher dipilih:", voucher);
                     setSelectedVoucher(voucher);
@@ -267,19 +276,21 @@ function VoucherModal({ show, onClose, vouchers }) {
                   <div>
                     <h2
                       className="
-        text-4xl
-        font-black
-      "
+    text-2xl
+    font-black
+    text-slate-900
+    break-all
+  "
                     >
                       {selectedVoucher?.code}
                     </h2>
 
                     <p
                       className="
-        text-slate-500
-        font-semibold
-        mt-2
-      "
+                        text-slate-500
+                        font-medium
+                        mt-3
+                      "
                     >
                       Berlaku hingga {selectedVoucher?.expiredAt}
                       {" • "}
@@ -436,16 +447,16 @@ gap-4
                                 )
                               }
                               className="
-  mt-2
-  w-full
-  h-9
+    mt-2
+    w-full
+    h-9
     rounded-xl
     bg-slate-900
     text-white
     font-bold
   "
                             >
-                              BELI SEKARANG
+                              BELI
                             </button>
                           </div>
                         </div>

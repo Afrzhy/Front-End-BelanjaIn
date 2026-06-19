@@ -1,7 +1,7 @@
 import {
   Wallet,
-  Crown,
-  Flame,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 
 function ShoppingMode({
@@ -19,13 +19,13 @@ function ShoppingMode({
     {
       name: "PREMIUM",
       desc: "Produk pilihan",
-      icon: <Crown size={26} />,
+      icon: <Sparkles size={26} />,
     },
 
     {
       name: "FLASH",
       desc: "Promo cepat",
-      icon: <Flame size={26} />,
+      icon: <Zap size={26} />,
     },
   ];
 

@@ -48,6 +48,46 @@ function Orders() {
     navigate("/customer?showCart=true");
   };
 
+  const handleReviewSubmit = (payload) => {
+    // update orders state and persist to localStorage for current user
+    setOrders((prev) => {
+      const next = prev.map((o) => {
+        if (o.id === payload.orderId) {
+          const updated = {
+            ...o,
+            review: payload,
+            history: [
+              ...(o.history || []),
+              {
+                title: "Ulasan Dikirim",
+                desc: payload.review || "Ulasan produk dikirim",
+                date: new Date().toISOString(),
+              },
+            ],
+          };
+          return updated;
+        }
+        return o;
+      });
+
+      // persist to localStorage for current user
+      try {
+        const currentUser =
+          JSON.parse(localStorage.getItem("currentUser")) || {};
+        if (currentUser?.id) {
+          const key = `orders_${currentUser.id}`;
+          localStorage.setItem(key, JSON.stringify(next));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      return next;
+    });
+
+    setShowReview(false);
+  };
+
   const handleComplaintSubmit = (payload) => {
     // update orders state and persist to localStorage for current user
     setOrders((prev) => {
@@ -161,6 +201,19 @@ function Orders() {
               sellerId: product.sellerId || order.sellerId || null,
               category: product.category || order.category || "",
               sellerName: product.store || "Toko",
+              city: product.city || "",
+              rating: product.rating || 0,
+              trust: product.trust || 0,
+              sold: product.sold || 0,
+              stock: product.stock || 0,
+              mode: product.mode || "HEMAT",
+              description: product.description || "",
+              infoPenting: product.infoPenting || "",
+              beratSatuan: product.beratSatuan || "",
+              minBeli: product.minBeli || "1 Buah",
+              kondisi: product.kondisi || "Baru",
+              asuransi: product.asuransi || "Opsional",
+              pemesananMin: product.pemesananMin || "1 Buah",
             },
           ],
         };
@@ -318,13 +371,112 @@ function Orders() {
         {/* EMPTY */}
 
         {filteredOrders.length === 0 && (
-          <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
-            <Package size={64} className="mx-auto text-slate-300 mb-6" />
+          <>
+            {activeTab === "Komplain" ? (
+              <div
+                className="
+          bg-white
+          rounded-[32px]
+          border
+          border-dashed
+          border-slate-200
+          min-h-[450px]
+          flex
+          flex-col
+          items-center
+          justify-center
+          text-center
+          px-6
+        "
+              >
+                <div
+                  className="
+            w-20
+            h-20
+            rounded-full
+            bg-slate-100
+            flex
+            items-center
+            justify-center
+            mb-6
+          "
+                >
+                  <div
+                    className="
+              w-9
+              h-9
+              rounded-full
+              border-[3px]
+              border-rose-500
+              text-rose-500
+              flex
+              items-center
+              justify-center
+              font-black
+              text-xl
+            "
+                  >
+                    !
+                  </div>
+                </div>
 
-            <h1 className="text-2xl lg:text-3xl font-black">
-              Tidak ada transaksi
-            </h1>
-          </div>
+                <h2
+                  className="
+            text-3xl
+            font-black
+            uppercase
+            tracking-wider
+            text-slate-900
+          "
+                >
+                  Belum Ada Komplain Yang Anda Masukkan
+                </h2>
+
+                <p
+                  className="
+            mt-4
+            text-slate-500
+            max-w-3xl
+            text-lg
+          "
+                >
+                  Semua pesanan berjalan lancar. Anda dapat mengajukan komplain
+                  pada detail transaksi jika terdapat masalah.
+                </p>
+
+                <button
+                  onClick={() => setActiveTab("Semua")}
+                  className="
+            mt-8
+            h-14
+            px-10
+            rounded-2xl
+            bg-rose-600
+            text-white
+            font-black
+            uppercase
+            shadow-lg
+            hover:bg-rose-700
+            transition
+          "
+                >
+                  Lihat Semua Transaksi
+                </button>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
+                <Package size={64} className="mx-auto text-slate-300 mb-6" />
+
+                <h1 className="text-2xl lg:text-3xl font-black">
+                  Tidak ada transaksi
+                </h1>
+
+                <p className="text-slate-500 mt-3">
+                  Belum ada transaksi pada kategori ini.
+                </p>
+              </div>
+            )}
+          </>
         )}
 
         <div className="flex flex-col gap-8">
@@ -455,42 +607,53 @@ function Orders() {
                 <div className="border-t bg-slate-50 px-6 py-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
-  <button
-    onClick={() => {
-      setSelectedOrder(order);
-      setShowModal(true);
-    }}
-    className="flex items-center gap-2 text-blue-600"
-  >
-    <span className="font-extrabold text-sm tracking-[2px]">
-      LIHAT DETAIL TRANSAKSI
-    </span>
-    <ChevronRight size={16} />
-  </button>
+                      <button
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setShowModal(true);
+                        }}
+                        className="flex items-center gap-2 text-blue-600"
+                      >
+                        <span className="font-extrabold text-sm tracking-[2px]">
+                          LIHAT DETAIL TRANSAKSI
+                        </span>
+                        <ChevronRight size={16} />
+                      </button>
 
-  {(order.status || "").toLowerCase().includes("selesai") && (
-    <button
-      onClick={() => {
-        setSelectedOrder(order);
-        setShowReview(true);
-      }}
-      className="
-        text-blue-600
-        font-extrabold
-        text-sm
-        tracking-[2px]
-        uppercase
-        flex
-        items-center
-        gap-1
-        hover:text-blue-700
-      "
-    >
-      BERI ULASAN
-      <span className="text-yellow-500">⭐</span>
-    </button>
-  )}
-</div>
+                      {(order.status || "")
+                        .toLowerCase()
+                        .includes("selesai") && (
+                        <>
+                          {order.review ? (
+                            <div className="text-green-600 font-extrabold text-sm tracking-[2px] uppercase flex items-center gap-1">
+                              ULASAN SELESAI
+                              <span className="text-yellow-500">✓</span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setShowReview(true);
+                              }}
+                              className="
+            text-blue-600
+            font-extrabold
+            text-sm
+            tracking-[2px]
+            uppercase
+            flex
+            items-center
+            gap-1
+            hover:text-blue-700
+          "
+                            >
+                              BERI ULASAN
+                              <span className="text-yellow-500">⭐</span>
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
 
                     <div className="flex items-center gap-3">
                       {(() => {
@@ -606,7 +769,22 @@ function Orders() {
                             <>
                               <button
                                 onClick={() => handleCancelComplaint(order.id)}
-                                className="px-4 py-2 rounded-md border font-bold"
+                                className="
+                                  h-11
+                                  px-6
+                                  rounded-xl
+                                  bg-red-50
+                                  border
+                                  border-red-200
+                                  text-red-600
+                                  font-extrabold
+                                  text-xs
+                                  tracking-wider
+                                  uppercase
+                                  hover:bg-red-100
+                                  hover:border-red-300
+                                  transition
+                                "
                               >
                                 BATALKAN KOMPLAIN
                               </button>
@@ -744,7 +922,7 @@ function Orders() {
         show={showReview}
         onClose={() => setShowReview(false)}
         order={selectedOrder}
-        onSubmit={(data) => console.log("review", data)}
+        onSubmit={handleReviewSubmit}
       />
       <ComplaintModal
         show={showComplaint}

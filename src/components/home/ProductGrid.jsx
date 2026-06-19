@@ -1,13 +1,13 @@
-import { useState } from "react";
-import ProductCard from "./ProductCard";
-import { products } from "../../data/products";
 import {
   LayoutGrid,
   List,
   ArrowUpDown,
   Sparkles,
+  Search,
 } from "lucide-react";
-
+import { useState } from "react";
+import ProductCard from "./ProductCard";
+import { products } from "../../data/products";
 function ProductGrid({
   selectedCategory,
   shoppingMode,
@@ -52,6 +52,8 @@ console.log("Semua produk", allProducts);
 
   const [sortBy, setSortBy] =
     useState("Terbaru");
+  const [searchTerm, setSearchTerm] =
+  useState("");
 
   /* ================= FILTER ================= */
 let filteredProducts =
@@ -71,9 +73,20 @@ let filteredProducts =
       item.mode === shoppingMode;
 
     // ================= SEARCH =================
-    const matchSearch =
-  search.trim() === "" ||
-  item.name.toLowerCase().includes(search.toLowerCase());
+    const keyword =
+  searchTerm || search;
+
+const matchSearch =
+  keyword.trim() === "" ||
+  item.name
+    ?.toLowerCase()
+    .includes(keyword.toLowerCase()) ||
+  item.brand
+    ?.toLowerCase()
+    .includes(keyword.toLowerCase()) ||
+  item.category
+    ?.toLowerCase()
+    .includes(keyword.toLowerCase());
 
     // ================= PRICE =================
     const matchPrice =
@@ -146,13 +159,26 @@ console.log(
 
             <Sparkles className="text-blue-600" />
 
-            <h2 className="text-3xl font-black">
-              Produk
-            </h2>
-
+            <h2
+  className="
+    text-[22px]
+    font-black
+    tracking-tight
+    text-slate-900
+  "
+>
+  Produk
+</h2>
           </div>
 
-          <p className="text-slate-500 mt-2">
+          <p
+  className="
+    text-[14px]
+    text-slate-500
+    mt-1
+    font-medium
+  "
+>
             Menampilkan{" "}
             {filteredProducts.length} produk
           </p>
@@ -160,95 +186,135 @@ console.log(
         </div>
 
         {/* RIGHT */}
-        <div className="flex items-center gap-3 flex-wrap">
+<div className="flex items-center gap-3 flex-wrap">
 
-          {/* VIEW */}
-          <div className="h-[55px] rounded-2xl bg-white border flex overflow-hidden shadow-sm">
+  {/* SEARCH */}
+  <div className="relative">
+    <Search
+      size={18}
+      className="
+        absolute
+        left-4
+        top-1/2
+        -translate-y-1/2
+        text-slate-400
+      "
+    />
 
-            <button
-              onClick={() =>
-                setViewMode("grid")
-              }
-              className={`w-14 flex items-center justify-center transition ${
-                viewMode === "grid"
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-400 bg-white"
-              }`}
-            >
+    <input
+      type="text"
+      placeholder="Cari produk..."
+      value={searchTerm}
+      onChange={(e) =>
+        setSearchTerm(e.target.value)
+      }
+      className="
+        w-[260px]
+        h-[55px]
+        pl-11
+        pr-4
+        rounded-2xl
+        bg-white
+        border
+        border-slate-200
+        outline-none
+        shadow-sm
+        text-sm
+        font-medium
+        focus:border-blue-500
+      "
+    />
+  </div>
 
-              <LayoutGrid size={18} />
+  {/* VIEW */}
+  <div
+    className="
+      h-[55px]
+      rounded-2xl
+      bg-white
+      border
+      flex
+      overflow-hidden
+      shadow-sm
+    "
+  >
+    <button
+      onClick={() =>
+        setViewMode("grid")
+      }
+      className={`w-12 flex items-center justify-center transition ${
+        viewMode === "grid"
+          ? "bg-blue-50 text-blue-600"
+          : "text-slate-400"
+      }`}
+    >
+      <LayoutGrid size={18} />
+    </button>
 
-            </button>
+    <button
+      onClick={() =>
+        setViewMode("list")
+      }
+      className={`w-12 flex items-center justify-center transition ${
+        viewMode === "list"
+          ? "bg-blue-50 text-blue-600"
+          : "text-slate-400"
+      }`}
+    >
+      <List size={18} />
+    </button>
+  </div>
 
-            <button
-              onClick={() =>
-                setViewMode("list")
-              }
-              className={`w-14 flex items-center justify-center transition ${
-                viewMode === "list"
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-400 bg-white"
-              }`}
-            >
+  {/* SORT */}
+  <div className="relative">
+    <select
+      value={sortBy}
+      onChange={(e) =>
+        setSortBy(
+          e.target.value
+        )
+      }
+      className="
+        appearance-none
+        w-[150px]
+        h-[55px]
+        rounded-2xl
+        bg-white
+        border
+        border-slate-200
+        px-5
+        pr-10
+        outline-none
+        shadow-sm
+        font-semibold
+      "
+    >
+      <option>
+        Terbaru
+      </option>
 
-              <List size={18} />
+      <option>
+        Termurah
+      </option>
 
-            </button>
+      <option>
+        Termahal
+      </option>
+    </select>
 
-          </div>
+    <ArrowUpDown
+      size={16}
+      className="
+        absolute
+        right-4
+        top-1/2
+        -translate-y-1/2
+        text-slate-400
+      "
+    />
+  </div>
 
-          {/* SORT */}
-          <div className="relative">
-
-            <select
-              value={sortBy}
-              onChange={(e) =>
-                setSortBy(
-                  e.target.value
-                )
-              }
-              className="
-                appearance-none
-                w-[180px]
-                h-[55px]
-                rounded-2xl
-                bg-white
-                border
-                px-5
-                pr-10
-                outline-none
-                shadow-sm
-              "
-            >
-
-              <option>
-                Terbaru
-              </option>
-
-              <option>
-                Termurah
-              </option>
-
-              <option>
-                Termahal
-              </option>
-
-            </select>
-
-            <ArrowUpDown
-              size={18}
-              className="
-                absolute
-                right-4
-                top-1/2
-                -translate-y-1/2
-                text-slate-400
-              "
-            />
-
-          </div>
-
-        </div>
+</div>
 
       </div>
 

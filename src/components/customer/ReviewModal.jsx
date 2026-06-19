@@ -1,15 +1,27 @@
-import { useState } from "react";
-import { X, Star, Camera } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Star, Camera, CheckCircle } from "lucide-react";
 
 export default function ReviewModal({ show, onClose, order, onSubmit }) {
   const [rating, setRating] = useState(5);
   const [review, setReview] = useState("");
   const [photos, setPhotos] = useState([]);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Validate image URL
   const isValidImageUrl = (url) => {
     return url && typeof url === "string" && url.trim().length > 0;
   };
+
+  // Auto-close success modal
+  useEffect(() => {
+    if (showSuccess) {
+      const timer = setTimeout(() => {
+        setShowSuccess(false);
+        onClose();
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccess, onClose]);
 
   if (!show || !order) return null;
 
@@ -46,7 +58,7 @@ export default function ReviewModal({ show, onClose, order, onSubmit }) {
     setRating(5);
     setReview("");
     setPhotos([]);
-    onClose();
+    setShowSuccess(true);
   };
 
   const getLabel = () => {
@@ -304,6 +316,78 @@ export default function ReviewModal({ show, onClose, order, onSubmit }) {
           </button>
         </div>
       </div>
+
+      {/* SUCCESS MODAL */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+          {/* BACKDROP */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+
+          {/* SUCCESS MODAL */}
+          <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+            {/* CLOSE BUTTON */}
+            <button
+              onClick={() => {
+                setShowSuccess(false);
+                onClose();
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 z-10"
+            >
+              <X size={20} />
+            </button>
+
+            {/* CONTENT */}
+            <div className="p-8 text-center">
+              {/* HEADER */}
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <Star size={24} className="fill-yellow-400 text-yellow-400" />
+                <h2 className="font-black text-lg">BERI ULASAN</h2>
+              </div>
+
+              {/* CHECKMARK */}
+              <div className="flex justify-center mb-6">
+                <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center">
+                  <CheckCircle
+                    size={60}
+                    className="text-green-500 fill-green-500"
+                  />
+                </div>
+              </div>
+
+              {/* SUCCESS MESSAGE */}
+              <h3 className="text-2xl font-black text-slate-900 mb-3">
+                ULASAN TERKIRIM!
+              </h3>
+
+              <p className="text-slate-600 text-sm leading-relaxed">
+                Terima kasih banyak atas ulasan berharga Anda. Ulasan telah
+                disimpan dan diterbitkan secara real-time!
+              </p>
+
+              {/* BUTTON */}
+              <button
+                onClick={() => {
+                  setShowSuccess(false);
+                  onClose();
+                }}
+                className="
+                  w-full
+                  h-12
+                  rounded-xl
+                  bg-blue-600
+                  text-white
+                  font-bold
+                  hover:bg-blue-700
+                  transition
+                  mt-6
+                "
+              >
+                SELESAI
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

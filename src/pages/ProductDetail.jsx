@@ -225,34 +225,6 @@ function ProductDetail() {
               Rp {product.price.toLocaleString("id-ID")}
             </h2>
 
-            {/* STORE */}
-            <div className="flex items-center justify-between border rounded-xl p-3 mt-6 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
-                  {product.store.charAt(0)}
-                </div>
-
-                <div>
-                  <button
-                    onClick={() =>
-                      navigate(`/store/${seller?.id || product?.sellerId}`)
-                    }
-                    className="font-bold hover:text-indigo-600"
-                  >
-                    {product.store}
-                  </button>
-                  <p className="text-xs text-slate-500">Official Store</p>
-                </div>
-              </div>
-
-              <button
-                onClick={handleFollow}
-                className="px-5 py-2 rounded-xl font-bold text-sm bg-indigo-600 text-white hover:bg-indigo-700"
-              >
-                Follow
-              </button>
-            </div>
-
             {/* TABS */}
             <div className="flex gap-8 border-b mt-8">
               {["deskripsi", "info", "ulasan"].map((tab) => (
@@ -388,13 +360,34 @@ function ProductDetail() {
                                 <p className="text-slate-600 mt-2 text-xs">
                                   {review.comment}
                                 </p>
-                                <p className="text-slate-400 text-xs mt-2">
+
+                                {/* Review Images */}
+                                {review.images && review.images.length > 0 && (
+                                  <div className="mt-3 grid grid-cols-5 gap-2">
+                                    {review.images.map((image, idx) => (
+                                      <div
+                                        key={`${review.id}-${idx}`}
+                                        className="rounded-lg overflow-hidden bg-slate-100 aspect-square cursor-pointer hover:shadow-lg transition-shadow"
+                                        onClick={() => setShowReviewModal(true)}
+                                      >
+                                        <img
+                                          src={image}
+                                          alt={`Review from ${review.reviewerName}`}
+                                          className="w-full h-full object-cover hover:scale-110 transition-transform"
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                <p className="text-slate-400 text-xs mt-3">
                                   {review.date}
                                 </p>
                               </div>
                             </div>
                             {review.helpful > 0 && (
-                              <div className="mt-2 text-xs text-slate-500">
+                              <div className="mt-3 text-xs text-slate-500 flex items-center gap-1">
+                                <ThumbsUp size={14} />
                                 {review.helpful} orang merasa membantu
                               </div>
                             )}
@@ -418,6 +411,36 @@ function ProductDetail() {
                   )}
                 </div>
               )}
+            </div>
+
+            {/* ================= STORE INFO ================= */}
+            <div className="mt-8 pt-6 border-t">
+              <div className="flex items-center justify-between border rounded-xl p-3 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
+                    {product.store.charAt(0)}
+                  </div>
+
+                  <div>
+                    <button
+                      onClick={() =>
+                        navigate(`/store/${seller?.id || product?.sellerId}`)
+                      }
+                      className="font-bold hover:text-indigo-600"
+                    >
+                      {product.store}
+                    </button>
+                    <p className="text-xs text-slate-500">Official Store</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleFollow}
+                  className="px-5 py-2 rounded-xl font-bold text-sm bg-indigo-600 text-white hover:bg-indigo-700"
+                >
+                  Follow
+                </button>
+              </div>
             </div>
           </div>
 
@@ -583,22 +606,30 @@ function ProductDetail() {
             {allProducts.slice(0, 5).map((item) => (
               <div
                 key={item.id}
-                onClick={() => navigate(`/product-detail/${item.id}`)}
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  setTimeout(() => {
+                    navigate(`/product-detail/${item.id}`);
+                  }, 300);
+                }}
                 className="
         bg-white
         border
         rounded-3xl
         overflow-hidden
         cursor-pointer
-        hover:shadow-xl
-        transition
+        hover:shadow-2xl
+        transition-all
+        duration-300
+        hover:-translate-y-2
+        hover:scale-105
         "
               >
-                <div className="relative">
+                <div className="relative overflow-hidden rounded-2xl">
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="w-full h-64 object-cover"
+                    className="w-full h-64 object-cover transition-transform duration-300 hover:scale-110"
                   />
 
                   <span

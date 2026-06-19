@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { users } from "../data/users";
 import { useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 import {
   ShoppingBag,
   Store,
@@ -75,16 +76,47 @@ function Login({ setAuthModal }) {
     }, 1500);
   };
   // ================= GOOGLE LOGIN =================
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = (credentialResponse) => {
+    console.log("✅ Google login response:", credentialResponse);
+
+    // Untuk sekarang, auto-login sebagai customer
+    // Nanti di production, kirim ke backend untuk verify token
+
+    const mockUser = {
+      id: "google_user_" + Math.random().toString(36).substr(2, 9),
+      email: "user@gmail.com",
+      name: "Google User",
+      role: "customer",
+      loginMethod: "google",
+    };
+
+    setLoadingLogin(true);
+    localStorage.setItem("currentUser", JSON.stringify(mockUser));
     setGoogleSuccess(true);
 
     setTimeout(() => {
+      setLoadingLogin(false);
       setGoogleSuccess(false);
-
-      // CLOSE MODAL
       setAuthModal(null);
-    }, 2000);
+      // Langsung redirect ke customer dashboard
+      navigate("/customer");
+    }, 1500);
   };
+
+  const handleGoogleError = () => {
+    console.error("❌ Google login error");
+    setLoginError("Gagal login dengan Google");
+  };
+
+  // Custom Google login button
+  const googleLogin = useGoogleLogin({
+    onSuccess: (codeResponse) => {
+      console.log("Google login success:", codeResponse);
+      handleGoogleLogin({ credential: codeResponse.access_token });
+    },
+    onError: handleGoogleError,
+    flow: "implicit",
+  });
 
   return (
     <div
@@ -136,7 +168,6 @@ py-5
         </div>
       )}
 
-      
       {/* ================= LOGIN CARD ================= */}
       <div
         className="
@@ -462,20 +493,27 @@ max-w-[320px]
 
           {/* ================= GOOGLE ================= */}
           <button
-            onClick={handleGoogleLogin}
+            onClick={() => googleLogin()}
+            disabled={loadingLogin}
             className="
               w-full
               h-14
               rounded-2xl
               border
               border-slate-200
+              bg-white
+              hover:bg-slate-50
               mt-6
               flex
               items-center
               justify-center
               gap-3
-              hover:bg-slate-50
               duration-300
+              hover:shadow-md
+              font-semibold
+              text-slate-700
+              disabled:opacity-50
+              disabled:cursor-not-allowed
             "
           >
             <img
@@ -484,9 +522,7 @@ max-w-[320px]
               className="w-5 h-5"
             />
 
-            <span className="text-sm font-semibold text-slate-700">
-              Lanjutkan dengan Google
-            </span>
+            <span>Lanjutkan dengan Google</span>
           </button>
 
           {/* ================= REGISTER ================= */}

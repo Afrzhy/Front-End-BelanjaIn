@@ -119,18 +119,23 @@ function Chat() {
 
           {/* CHAT LIST */}
           <div className="flex-1 overflow-y-auto">
-            {customerChats.map((chat) => {
-              const seller = sellers.find((s) => s.id === chat.sellerId);
+            {customerChats
+              .filter((chat) => {
+                const seller = sellers.find((s) => s.id === chat.sellerId);
+                return seller && seller.logo;
+              })
+              .map((chat) => {
+                const seller = sellers.find((s) => s.id === chat.sellerId);
 
-              const lastMessage = chat.messages[chat.messages.length - 1];
+                const lastMessage = chat.messages[chat.messages.length - 1];
 
-              const isActive = activeChat?.id === chat.id;
+                const isActive = activeChat?.id === chat.id;
 
-              return (
-                <div
-                  key={chat.id}
-                  onClick={() => navigate(`/customer/chat/${chat.sellerId}`)}
-                  className={`
+                return (
+                  <div
+                    key={chat.id}
+                    onClick={() => navigate(`/customer/chat/${chat.sellerId}`)}
+                    className={`
                     mx-3
                     mt-3
                     p-4
@@ -143,31 +148,31 @@ function Chat() {
                         : "hover:bg-slate-50"
                     }
                   `}
-                >
-                  <div className="flex gap-4">
-                    {/* LOGO */}
-                    <div className="relative">
-                      <div
-                        className="
+                  >
+                    <div className="flex gap-4">
+                      {/* LOGO */}
+                      <div className="relative">
+                        <div
+                          className="
                           w-16
                           h-16
                           rounded-2xl
                           overflow-hidden
                         "
-                      >
-                        <img
-                          src={seller?.logo}
-                          alt={seller?.name}
-                          className="
+                        >
+                          <img
+                            src={seller?.logo}
+                            alt={seller?.name}
+                            className="
                             w-full
                             h-full
                             object-cover
                           "
-                        />
-                      </div>
+                          />
+                        </div>
 
-                      <span
-                        className="
+                        <span
+                          className="
                           absolute
                           -bottom-1
                           -right-1
@@ -178,45 +183,45 @@ function Chat() {
                           border-white
                           rounded-full
                         "
-                      />
-                    </div>
+                        />
+                      </div>
 
-                    {/* CONTENT */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between">
-                        <h3
-                          className="
+                      {/* CONTENT */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between">
+                          <h3
+                            className="
                             font-black
                             truncate
                           "
-                        >
-                          {seller?.name}
-                        </h3>
+                          >
+                            {seller?.name}
+                          </h3>
 
-                        <span
-                          className={`
+                          <span
+                            className={`
                             text-[11px]
                             font-bold
                             ${isActive ? "text-white/80" : "text-slate-400"}
                           `}
-                        >
-                          JUN 16
-                        </span>
-                      </div>
+                          >
+                            JUN 16
+                          </span>
+                        </div>
 
-                      <div className="flex justify-between items-center mt-2">
-                        <p
-                          className={`
+                        <div className="flex justify-between items-center mt-2">
+                          <p
+                            className={`
                             text-sm
                             truncate
                             ${isActive ? "text-white/80" : "text-slate-500"}
                           `}
-                        >
-                          {lastMessage?.text}
-                        </p>
+                          >
+                            {lastMessage?.text}
+                          </p>
 
-                        <span
-                          className={`
+                          <span
+                            className={`
                             text-[10px]
                             px-2
                             py-1
@@ -228,15 +233,15 @@ function Chat() {
                                 : "bg-emerald-100 text-emerald-600"
                             }
                           `}
-                        >
-                          DIBACA
-                        </span>
+                          >
+                            DIBACA
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
 
@@ -370,20 +375,6 @@ function Chat() {
                       ONLINE
                     </p>
                   </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <button className="w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center">
-                    <Phone size={18} />
-                  </button>
-
-                  <button className="w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center">
-                    <Video size={18} />
-                  </button>
-
-                  <button className="w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center">
-                    <MoreVertical size={18} />
-                  </button>
                 </div>
               </div>
 

@@ -1,6 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 
-import { Heart, ShoppingCart, ArrowRight } from "lucide-react";
+import {
+  Heart,
+  ShoppingCart,
+  ArrowRight,
+  Trash2,
+  Store,
+  Clock,
+} from "lucide-react";
 
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -50,6 +57,9 @@ function Home() {
   const [showWishlist, setShowWishlist] = useState(false);
 
   const [wishlistItems, setWishlistItems] = useState([]);
+  const [wishlistDuration, setWishlistDuration] = useState({});
+  const [wishlistTimestamps, setWishlistTimestamps] = useState({});
+  const [wishlistCountdowns, setWishlistCountdowns] = useState({});
 
   // ================= CART =================
   const [showCart, setShowCart] = useState(false);
@@ -69,8 +79,25 @@ function Home() {
   // ================= LOAD WISHLIST =================
   useEffect(() => {
     const savedWishlist = JSON.parse(localStorage.getItem(wishlistKey)) || [];
-
     setWishlistItems(savedWishlist);
+
+    // Initialize timestamps for items that don't have one
+    const timestamps =
+      JSON.parse(
+        localStorage.getItem(`wishlist_timestamps_${currentUser.id}`),
+      ) || {};
+
+    savedWishlist.forEach((item) => {
+      if (!timestamps[item.id]) {
+        timestamps[item.id] = Date.now();
+      }
+    });
+
+    localStorage.setItem(
+      `wishlist_timestamps_${currentUser.id}`,
+      JSON.stringify(timestamps),
+    );
+    setWishlistTimestamps(timestamps);
   }, []);
 
   // ================= LOAD CART =================
@@ -86,6 +113,46 @@ function Home() {
       setShowCart(true);
     }
   }, [location.search]);
+
+  // ================= COUNTDOWN TIMER =================
+  useEffect(() => {
+    // Initial calculation
+    const calculateCountdowns = () => {
+      const newCountdowns = {};
+
+      wishlistItems.forEach((item) => {
+        const startTime = wishlistTimestamps[item.id] || Date.now();
+        const duration = (wishlistDuration[item.id] || 1) * 24 * 60 * 60 * 1000; // Convert days to ms
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, duration - elapsed);
+
+        // Calculate hours, days, minutes, seconds
+        const totalSeconds = Math.floor(remaining / 1000);
+        const days = Math.floor(totalSeconds / (24 * 3600));
+        const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        newCountdowns[item.id] = {
+          hours,
+          days,
+          minutes,
+          seconds,
+          formatted: `${days}D ${hours}H ${minutes}M ${seconds}S`,
+        };
+      });
+
+      setWishlistCountdowns(newCountdowns);
+    };
+
+    // Calculate immediately on first load
+    calculateCountdowns();
+
+    // Then set up interval for continuous updates
+    const timer = setInterval(calculateCountdowns, 1000);
+
+    return () => clearInterval(timer);
+  }, [wishlistItems, wishlistDuration, wishlistTimestamps]);
 
   // ================= HANDLE SEARCH =================
   const handleSearch = () => {
@@ -242,21 +309,27 @@ function Home() {
               bg-white
               shadow-2xl
               z-[999]
-              p-6
               overflow-y-auto
             "
           >
             {/* HEADER */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-black">Wishlist</h2>
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Heart size={28} className="text-red-500 fill-red-500" />
+                <h2 className="text-xl font-black">WISHLIST SAYA</h2>
+              </div>
 
               <button
                 onClick={() => setShowWishlist(false)}
                 className="
-                  w-10
-                  h-10
-                  rounded-xl
-                  bg-slate-100
+                  w-8
+                  h-8
+                  rounded-lg
+                  flex
+                  items-center
+                  justify-center
+                  hover:bg-slate-100
+                  text-slate-500
                 "
               >
                 ✕
@@ -273,6 +346,7 @@ function Home() {
                   justify-center
                   py-24
                   text-center
+                  px-6
                 "
               >
                 <div
@@ -334,128 +408,206 @@ function Home() {
             )}
 
             {/* LIST */}
-            <div className="space-y-4">
+            <div className="p-6 space-y-4">
               {wishlistItems.map((item) => (
                 <div
                   key={item.id}
                   className="
                     border
-                    rounded-3xl
-                    p-3
-                    flex
-                    gap-3
+                    rounded-2xl
+                    p-4
                     bg-white
+                    shadow-sm
+                    hover:shadow-md
+                    transition-shadow
                   "
                 >
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="
-                      w-24
-                      h-24
-                      rounded-2xl
-                      object-cover
-                    "
-                  />
-
-                  <div className="flex-1">
-                    <h3
-                      className="
-                        font-black
-                        line-clamp-2
-                      "
-                    >
-                      {item.name}
-                    </h3>
-
-                    <p
-                      className="
-                        text-blue-600
-                        font-black
-                        mt-2
-                      "
-                    >
-                      Rp {item.price.toLocaleString("id-ID")}
-                    </p>
-
-                    <div className="flex gap-2 mt-4">
-                      {/* TAMBAH CART */}
-                      <button
-                        onClick={() => {
-                          const oldCart =
-                            JSON.parse(localStorage.getItem(cartKey)) || [];
-
-                          const isExist = oldCart.find(
-                            (cartItem) => cartItem.id === item.id,
-                          );
-
-                          let updatedCart = oldCart;
-
-                          if (!isExist) {
-                            updatedCart = [
-                              ...oldCart,
-                              {
-                                ...item,
-                                qty: 1,
-                              },
-                            ];
-
-                            localStorage.setItem(
-                              cartKey,
-                              JSON.stringify(updatedCart),
-                            );
-
-                            setCartItems(updatedCart);
-                          }
-
-                          const updatedWishlist = wishlistItems.filter(
-                            (wishlistItem) => wishlistItem.id !== item.id,
-                          );
-
-                          setWishlistItems(updatedWishlist);
-
-                          localStorage.setItem(
-                            wishlistKey,
-                            JSON.stringify(updatedWishlist),
-                          );
-                        }}
+                  {/* PRODUCT IMAGE */}
+                  <div className="flex gap-4 mb-3">
+                    <div className="relative">
+                      <img
+                        src={item.image}
+                        alt={item.name}
                         className="
-                          flex-1
-                          h-11
+                          w-28
+                          h-28
                           rounded-xl
-                          bg-blue-600
-                          text-white
-                          font-bold
+                          object-cover
+                          bg-slate-100
                         "
-                      >
-                        Keranjang
-                      </button>
-
-                      {/* HAPUS */}
-                      <button
-                        onClick={() => {
-                          const updated = wishlistItems.filter(
-                            (wishlistItem) => wishlistItem.id !== item.id,
-                          );
-
-                          setWishlistItems(updated);
-
-                          localStorage.setItem(
-                            wishlistKey,
-                            JSON.stringify(updated),
-                          );
-                        }}
-                        className="
-                          w-11
-                          h-11
-                          rounded-xl
-                          bg-red-50
-                          text-red-500
-                        "
-                      >
-                        ✕
-                      </button>
+                      />
                     </div>
+
+                    <div className="flex-1 flex flex-col">
+                      {/* STORE INFO */}
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <Store size={14} className="text-slate-400" />
+                        <a
+                          href={`/store/${item.sellerId}`}
+                          className="text-xs font-bold text-blue-600 hover:underline"
+                        >
+                          {item.store?.toUpperCase()}
+                        </a>
+                      </div>
+
+                      {/* PRODUCT NAME */}
+                      <h3 className="font-bold text-sm line-clamp-2 mb-2">
+                        {item.name}
+                      </h3>
+
+                      {/* PRICE */}
+                      <p className="text-lg font-black text-blue-600">
+                        Rp {item.price.toLocaleString("id-ID")}
+                      </p>
+
+                      {/* MODE/STATUS */}
+                      {item.mode && (
+                        <div className="mt-2 flex items-center gap-1.5 bg-orange-100 text-orange-700 px-2 py-1 rounded-lg w-fit">
+                          <Clock size={12} />
+                          <span className="text-xs font-bold">
+                            {item.mode === "FLASH" ? "⏱️ " : ""}
+                            {wishlistCountdowns[item.id]?.formatted ||
+                              "0D 0H 0M 0S"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* DURATION SLIDER */}
+                  <div className="mb-4">
+                    <label className="text-xs font-bold text-slate-600 block mb-2">
+                      DURASI SIMPAN ({wishlistDuration[item.id] || 1}-10 HARI)
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={wishlistDuration[item.id] || 1}
+                      onChange={(e) =>
+                        setWishlistDuration({
+                          ...wishlistDuration,
+                          [item.id]: parseInt(e.target.value),
+                        })
+                      }
+                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    />
+                  </div>
+
+                  {/* BUTTONS */}
+                  <div className="flex gap-2">
+                    {/* TAMBAH CART */}
+                    <button
+                      onClick={() => {
+                        const oldCart =
+                          JSON.parse(localStorage.getItem(cartKey)) || [];
+
+                        const isExist = oldCart.find(
+                          (cartItem) => cartItem.id === item.id,
+                        );
+
+                        let updatedCart = oldCart;
+
+                        if (!isExist) {
+                          updatedCart = [
+                            ...oldCart,
+                            {
+                              ...item,
+                              qty: 1,
+                            },
+                          ];
+
+                          localStorage.setItem(
+                            cartKey,
+                            JSON.stringify(updatedCart),
+                          );
+
+                          setCartItems(updatedCart);
+                        }
+
+                        const updatedWishlist = wishlistItems.filter(
+                          (wishlistItem) => wishlistItem.id !== item.id,
+                        );
+
+                        setWishlistItems(updatedWishlist);
+
+                        // Remove timestamp for moved item
+                        const timestamps =
+                          JSON.parse(
+                            localStorage.getItem(
+                              `wishlist_timestamps_${currentUser.id}`,
+                            ),
+                          ) || {};
+                        delete timestamps[item.id];
+                        localStorage.setItem(
+                          `wishlist_timestamps_${currentUser.id}`,
+                          JSON.stringify(timestamps),
+                        );
+                        setWishlistTimestamps(timestamps);
+
+                        localStorage.setItem(
+                          wishlistKey,
+                          JSON.stringify(updatedWishlist),
+                        );
+                      }}
+                      className="
+                        flex-1
+                        h-11
+                        rounded-xl
+                        bg-blue-600
+                        text-white
+                        font-bold
+                        text-sm
+                        hover:bg-blue-700
+                        transition
+                      "
+                    >
+                      Tambah ke Keranjang
+                    </button>
+
+                    {/* HAPUS */}
+                    <button
+                      onClick={() => {
+                        const updated = wishlistItems.filter(
+                          (wishlistItem) => wishlistItem.id !== item.id,
+                        );
+
+                        setWishlistItems(updated);
+
+                        // Remove timestamp for deleted item
+                        const timestamps =
+                          JSON.parse(
+                            localStorage.getItem(
+                              `wishlist_timestamps_${currentUser.id}`,
+                            ),
+                          ) || {};
+                        delete timestamps[item.id];
+                        localStorage.setItem(
+                          `wishlist_timestamps_${currentUser.id}`,
+                          JSON.stringify(timestamps),
+                        );
+                        setWishlistTimestamps(timestamps);
+
+                        localStorage.setItem(
+                          wishlistKey,
+                          JSON.stringify(updated),
+                        );
+                      }}
+                      className="
+                        w-11
+                        h-11
+                        rounded-xl
+                        bg-red-50
+                        text-red-500
+                        flex
+                        items-center
+                        justify-center
+                        hover:bg-red-100
+                        transition
+                      "
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -494,23 +646,56 @@ function Home() {
             "
           >
             {/* HEADER */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl font-black">Keranjang</h2>
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-5 flex items-center justify-between z-10">
+              <div className="flex items-center gap-4">
+                <div
+                  className="
+        w-12
+        h-12
+        rounded-2xl
+        bg-blue-600
+        text-white
+        flex
+        items-center
+        justify-center
+        shadow-lg
+      "
+                >
+                  <ShoppingCart size={22} />
+                </div>
 
-                <p className="text-slate-400 text-sm font-bold mt-1">
-                  {cartItems.length} ITEM
-                </p>
+                <div>
+                  <h2 className="text-[20px] font-black text-slate-900">
+                    Keranjang Belanja
+                  </h2>
+
+                  <p
+                    className="
+  inline-flex
+  items-center
+  gap-1.5
+  px-2.5
+  py-1
+  rounded-full
+  bg-slate-100
+  text-[11px]
+  font-bold
+  text-slate-500
+  uppercase
+"
+                  >
+                    {cartItems.length} Item Terpilih
+                  </p>
+                </div>
               </div>
 
               <button
                 onClick={() => setShowCart(false)}
                 className="
-                  w-10
-                  h-10
-                  rounded-xl
-                  bg-slate-100
-                "
+      text-slate-400
+      hover:text-slate-700
+      text-3xl
+    "
               >
                 ✕
               </button>
@@ -586,72 +771,209 @@ function Home() {
             )}
 
             {/* LIST */}
-            <div className="space-y-4">
+            <div className="p-6 space-y-4">
               {cartItems.map((item) => (
                 <div
                   key={item.id}
                   className="
-                    border
-                    rounded-3xl
-                    p-3
-                    flex
-                    gap-3
-                    bg-white
-                  "
+    bg-white
+    py-4
+    border-b
+    border-slate-100
+  "
                 >
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="
-                      w-24
-                      h-24
-                      rounded-2xl
-                      object-cover
-                    "
-                  />
-
-                  <div className="flex-1">
-                    <h3
+                  <div className="flex gap-4">
+                    {/* IMAGE */}
+                    <img
+                      src={item.image}
+                      alt={item.name}
                       className="
-                        font-black
-                        line-clamp-2
-                      "
-                    >
-                      {item.name}
-                    </h3>
+      w-[120px]
+      h-[120px]
+      rounded-3xl
+      object-cover
+      bg-slate-100
+      shrink-0
+    "
+                    />
 
-                    <p
-                      className="
-                        text-blue-600
-                        font-black
-                        mt-2
-                      "
-                    >
-                      Rp {item.price.toLocaleString("id-ID")}
-                    </p>
+                    <div className="flex-1">
+                      {/* TOP */}
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div
+                            className="
+            inline-flex
+            items-center
+            gap-2
+            px-3
+            py-1
+            rounded-full
+            bg-slate-100
+            text-[12px]
+            font-black
+            text-slate-600
+            uppercase
+          "
+                          >
+                            🔵 {item.store}
+                          </div>
+                        </div>
 
-                    <button
-                      onClick={() => {
-                        const updated = cartItems.filter(
-                          (cartItem) => cartItem.id !== item.id,
-                        );
+                        <button
+                          onClick={() => {
+                            const updated = cartItems.filter(
+                              (cartItem) => cartItem.id !== item.id,
+                            );
 
-                        setCartItems(updated);
+                            setCartItems(updated);
 
-                        localStorage.setItem(cartKey, JSON.stringify(updated));
-                      }}
-                      className="
-                        mt-4
-                        w-full
-                        h-11
-                        rounded-xl
-                        bg-red-50
-                        text-red-500
-                        font-bold
-                      "
-                    >
-                      Hapus
-                    </button>
+                            localStorage.setItem(
+                              cartKey,
+                              JSON.stringify(updated),
+                            );
+                          }}
+                          className="
+          text-slate-300
+          hover:text-red-500
+        "
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+
+                      {/* TITLE */}
+                      <h3
+                        className="
+  mt-2
+  text-[15px]
+  leading-tight
+  font-extrabold
+  text-slate-900
+  line-clamp-2
+"
+                      >
+                        {item.name}
+                      </h3>
+
+                      {/* CATEGORY */}
+                      <p
+                        className="
+  text-[11px]
+  uppercase
+  font-semibold
+  text-slate-400
+  mt-1
+"
+                      >
+                        {item.category}
+                      </p>
+
+                      {/* BOTTOM */}
+                      <div className="mt-3 flex items-center gap-3">
+                        <p
+                          className="
+    flex-1
+    text-[14px]
+    font-extrabold
+    text-blue-600
+    whitespace-nowrap
+  "
+                        >
+                          Rp {item.price.toLocaleString("id-ID")}
+                        </p>
+
+                        <div
+                          className="
+    flex
+    items-center
+    justify-between
+    w-[105px]
+    h-[38px]
+    px-2
+    bg-slate-100
+    rounded-full
+    shrink-0
+  "
+                        >
+                          <button
+                            onClick={() => {
+                              const updated = cartItems.map((cartItem) =>
+                                cartItem.id === item.id
+                                  ? {
+                                      ...cartItem,
+                                      qty: Math.max(1, (cartItem.qty || 1) - 1),
+                                    }
+                                  : cartItem,
+                              );
+
+                              setCartItems(updated);
+                              localStorage.setItem(
+                                cartKey,
+                                JSON.stringify(updated),
+                              );
+                            }}
+                            className="
+      w-6
+      h-6
+      flex
+      items-center
+      justify-center
+      text-slate-400
+      hover:text-slate-700
+      font-bold
+      text-sm
+    "
+                          >
+                            −
+                          </button>
+
+                          <span
+                            className="
+      w-5
+      text-center
+      text-sm
+      font-bold
+      text-slate-900
+    "
+                          >
+                            {item.qty || 1}
+                          </span>
+
+                          <button
+                            onClick={() => {
+                              const updated = cartItems.map((cartItem) =>
+                                cartItem.id === item.id
+                                  ? {
+                                      ...cartItem,
+                                      qty: (cartItem.qty || 1) + 1,
+                                    }
+                                  : cartItem,
+                              );
+
+                              setCartItems(updated);
+                              localStorage.setItem(
+                                cartKey,
+                                JSON.stringify(updated),
+                              );
+                            }}
+                            className="
+      w-6
+      h-6
+      flex
+      items-center
+      justify-center
+      text-blue-600
+      hover:text-blue-800
+      font-bold
+      text-sm
+    "
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -661,83 +983,81 @@ function Home() {
             {cartItems.length > 0 && (
               <div
                 className="
-                  mt-8
-                  border-t
-                  pt-6
-                "
+    sticky
+    bottom-0
+    bg-white
+    border-t
+    border-slate-200
+    p-6
+  "
               >
-                <div className="flex justify-between mb-3">
-                  <span className="text-slate-500 font-semibold">Subtotal</span>
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 font-bold">Subtotal</span>
 
-                  <span className="font-black">
-                    Rp {subtotal.toLocaleString("id-ID")}
-                  </span>
-                </div>
+                    <span className="font-black text-slate-600">
+                      Rp {subtotal.toLocaleString("id-ID")}
+                    </span>
+                  </div>
 
-                <div className="flex justify-between mb-5">
-                  <span className="text-slate-500 font-semibold">
-                    Biaya Layanan
-                  </span>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 font-bold">
+                      Biaya Layanan
+                    </span>
 
-                  <span className="font-black">
-                    Rp {serviceFee.toLocaleString("id-ID")}
-                  </span>
-                </div>
+                    <span className="font-black text-slate-600">
+                      Rp {serviceFee.toLocaleString("id-ID")}
+                    </span>
+                  </div>
 
-                <div
-                  className="
-                    flex
-                    justify-between
-                    items-center
-                    mb-6
-                  "
-                >
-                  <span
+                  <div className="border-t pt-5 flex justify-between">
+                    <span
+                      className="
+          text-[18px]
+          font-black
+          uppercase
+          tracking-wider
+        "
+                    >
+                      TOTAL BAYAR
+                    </span>
+
+                    <span
+                      className="
+          text-[22px]
+          font-black
+          text-blue-600
+        "
+                    >
+                      Rp {total.toLocaleString("id-ID")}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setShowCart(false);
+                      navigate("/customer/checkout");
+                    }}
                     className="
-                      text-2xl
-                      font-black
-                    "
+    w-full
+    h-[58px]
+    rounded-[20px]
+    bg-blue-600
+    hover:bg-blue-700
+    text-white
+    text-[18px]
+    font-black
+    flex
+    items-center
+    justify-center
+    gap-3
+    transition
+  "
                   >
-                    TOTAL
-                  </span>
-
-                  <span
-                    className="
-                      text-3xl
-                      font-black
-                      text-blue-600
-                    "
-                  >
-                    Rp {total.toLocaleString("id-ID")}
-                  </span>
+                    Lanjut ke Pembayaran
+                    <ArrowRight size={20} />
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => {
-                    setShowCart(false);
-
-                    navigate("/customer/checkout");
-                  }}
-                  className="
-                    w-full
-                    h-14
-                    rounded-2xl
-                    bg-blue-600
-                    hover:bg-blue-700
-                    text-white
-                    font-black
-                    text-lg
-                    shadow-xl
-                    duration-300
-                    flex
-                    items-center
-                    justify-center
-                    gap-3
-                  "
-                >
-                  Lanjut ke Pembayaran
-                  <ArrowRight size={22} />
-                </button>
               </div>
             )}
           </div>

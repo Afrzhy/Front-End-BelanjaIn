@@ -17,7 +17,7 @@ function CategorySection({ selectedCategory, setSelectedCategory }) {
             <div
               key={item.id}
               onClick={() => setSelectedCategory(item.name)}
-              className={`w-full h-[145px] rounded-[24px] border flex flex-col items-center justify-center gap-3 cursor-pointer duration-300 hover:scale-105 ${
+               className={`w-full h-[115px] rounded-[20px] border flex flex-col items-center justify-center gap-2 cursor-pointer duration-300 hover:scale-105 ${
                 selectedCategory === item.name
                   ? "bg-blue-600 text-white border-blue-600 shadow-xl"
                   : "bg-white hover:shadow-lg"
@@ -43,7 +43,7 @@ function CategorySection({ selectedCategory, setSelectedCategory }) {
         {/* MORE */}
         <div
           onClick={() => setShowAll(true)}
-          className="w-full h-[145px] rounded-[24px] border bg-white flex flex-col items-center justify-center gap-3 cursor-pointer hover:shadow-lg duration-300"
+          className="w-full h-[115px] rounded-[20px] border bg-white flex flex-col items-center justify-center gap-3 cursor-pointer hover:shadow-lg duration-300"
         >
           <div className="w-[54px] h-[54px] rounded-2xl bg-slate-100 flex items-center justify-center text-3xl font-black text-slate-500">
             ...

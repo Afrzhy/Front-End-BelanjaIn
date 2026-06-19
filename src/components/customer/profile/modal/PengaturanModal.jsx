@@ -18,6 +18,7 @@ import { MdOutlineAlternateEmail } from "react-icons/md";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { languages } from "../../../../data/language";
+import logo from "../../../../assets/logo.jpeg";
 import { useState } from "react";
 const Switch = ({ checked, onChange }) => (
   <button
@@ -62,6 +63,15 @@ function PengaturanModal({
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState(null);
   const [openPolicy, setOpenPolicy] = useState(null);
+  const [blockedUsers, setBlockedUsers] = useState([
+    { avatar: "T", name: "Toko Murah Rejeki" },
+    { avatar: "U", name: "User_Hacker99" },
+    { avatar: "S", name: "Spam_Seller_01" },
+  ]);
+
+  const handleUnblock = (index) => {
+    setBlockedUsers(blockedUsers.filter((_, i) => i !== index));
+  };
 
   if (!activeModal) {
     return null;
@@ -485,77 +495,91 @@ function PengaturanModal({
           )}
           {activeModal === "blocked" && (
             <div className="space-y-4">
-              {[
-                { avatar: "T", name: "Toko Murah Rejeki" },
-                { avatar: "U", name: "User_Hacker99" },
-                { avatar: "S", name: "Spam_Seller_01" },
-              ].map((user, index) => (
-                <div
-                  key={index}
-                  className="
-                    bg-white
-                    border
-                    border-slate-200
-                    rounded-3xl
-                    p-4
-                    flex
-                    items-center
-                    justify-between
-                    shadow-sm
-                  "
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="
-                      w-12
-                      h-12
-                      rounded-2xl
-                      bg-slate-100
+              {blockedUsers.length > 0 ? (
+                blockedUsers.map((user, index) => (
+                  <div
+                    key={index}
+                    className="
+                      bg-white
+                      border
+                      border-slate-200
+                      rounded-3xl
+                      p-4
                       flex
                       items-center
-                      justify-center
-                      font-black
-                      text-slate-500
-                      text-lg
+                      justify-between
+                      shadow-sm
                     "
-                    >
-                      {user.avatar}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="
+                        w-12
+                        h-12
+                        rounded-2xl
+                        bg-slate-100
+                        flex
+                        items-center
+                        justify-center
+                        font-black
+                        text-slate-500
+                        text-lg
+                      "
+                      >
+                        {user.avatar}
+                      </div>
+
+                      <h4 className="font-black text-[15px] text-slate-800">
+                        {user.name}
+                      </h4>
                     </div>
 
-                    <h4 className="font-black text-[15px] text-slate-800">
-                      {user.name}
-                    </h4>
+                    <button
+                      onClick={() => handleUnblock(index)}
+                      className="
+                      px-5
+                      h-10
+                      rounded-xl
+                      bg-red-600
+                      text-white
+                      font-black
+                      hover:bg-red-700
+                      duration-200
+                      active:scale-95
+                    "
+                    >
+                      {currentText.unblockButton}
+                    </button>
                   </div>
+                ))
+              ) : (
+                <p
+                  className="
+                  text-center
+                  text-[14px]
+                  font-black
+                  text-slate-500
+                  py-8
+                "
+                >
+                  Tidak ada pengguna yang diblokir
+                </p>
+              )}
 
-                  <button
-                    className="
-                    px-5
-                    h-10
-                    rounded-xl
-                    bg-red-50
-                    text-red-600
-                    font-black
-                    hover:bg-red-100
-                    duration-200
-                  "
-                  >
-                    {currentText.unblockButton}
-                  </button>
-                </div>
-              ))}
-
-              <p
-                className="
-                text-center
-                text-[13px]
-                font-black
-                tracking-wider
-                text-slate-400
-                pt-2
-              "
-              >
-                {currentText.blockedFooter}
-              </p>
+              {blockedUsers.length > 0 && (
+                <p
+                  className="
+                  text-center
+                  text-[13px]
+                  font-black
+                  tracking-wider
+                  text-slate-400
+                  pt-2
+                "
+                >
+                  {currentText.blockedFooter}
+                </p>
+              )}
             </div>
           )}
           {activeModal === "language" && (
@@ -604,27 +628,26 @@ function PengaturanModal({
             </div>
           )}
           {activeModal === "help" && (
-            <div className="space-y-5">
+            <div className="space-y-3 max-h-[calc(100vh-240px)] overflow-y-auto pr-2">
               {/* Banner */}
-              <div className="bg-[#F3F6FF] border border-slate-200 rounded-3xl p-5 flex gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center">
-                  <CircleHelp size={22} className="text-blue-600" />
+              <div className="bg-[#F3F6FF] border border-slate-200 rounded-2xl p-3 flex gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0">
+                  <CircleHelp size={18} className="text-blue-600" />
                 </div>
 
                 <div>
-                  <h4 className="font-black text-[#0B1739] text-sm">
+                  <h4 className="font-black text-[#0B1739] text-xs leading-none">
                     BUTUH BANTUAN CEPAT?
                   </h4>
 
-                  <p className="text-xs text-slate-500 mt-1 leading-6">
-                    Pusat Bantuan Terintegrasi CS BelanjaIn siap melayani Anda
-                    24 jam sehari.
+                  <p className="text-[11px] text-slate-500 mt-1.5 leading-5">
+                    CS BelanjaIn siap melayani 24/7
                   </p>
                 </div>
               </div>
 
               {/* Contact */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2">
                 <a
                   href="https://wa.me/"
                   target="_blank"
@@ -632,23 +655,23 @@ function PengaturanModal({
                   className="
           bg-white
           border
-          rounded-3xl
-          p-5
+          rounded-2xl
+          p-3
           hover:bg-slate-50
           transition
         "
                 >
-                  <div className="flex gap-3 items-center">
-                    <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
-                      <FaWhatsapp size={20} className="text-green-600" />
+                  <div className="flex gap-2 items-center">
+                    <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+                      <FaWhatsapp size={16} className="text-green-600" />
                     </div>
 
                     <div>
-                      <p className="text-[10px] font-black tracking-wider text-slate-400">
-                        WHATSAPP SUPPORT
+                      <p className="text-[9px] font-black tracking-wider text-slate-400 leading-none">
+                        WHATSAPP
                       </p>
 
-                      <p className="text-sm font-bold text-slate-700">
+                      <p className="text-xs font-bold text-slate-700 leading-tight">
                         Hubungi CS
                       </p>
                     </div>
@@ -660,26 +683,26 @@ function PengaturanModal({
                   className="
           bg-white
           border
-          rounded-3xl
-          p-5
+          rounded-2xl
+          p-3
           hover:bg-slate-50
           transition
         "
                 >
-                  <div className="flex gap-3 items-center">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <div className="flex gap-2 items-center">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
                       <MdOutlineAlternateEmail
-                        size={20}
+                        size={16}
                         className="text-blue-600"
                       />
                     </div>
 
                     <div>
-                      <p className="text-[10px] font-black tracking-wider text-slate-400">
-                        EMAIL DUKUNGAN
+                      <p className="text-[9px] font-black tracking-wider text-slate-400 leading-none">
+                        EMAIL
                       </p>
 
-                      <p className="text-sm font-bold text-slate-700">
+                      <p className="text-xs font-bold text-slate-700 leading-tight">
                         Kirim Email
                       </p>
                     </div>
@@ -688,42 +711,43 @@ function PengaturanModal({
               </div>
 
               {/* FAQ Header */}
-              <div className="flex items-center justify-between">
-                <h3 className="font-black text-[#0B1739] tracking-wide">
-                  ARTIKEL BANTUAN & FAQ
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-black text-[#0B1739] text-sm tracking-wide">
+                  ARTIKEL BANTUAN
                 </h3>
 
-                <span className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">
-                  3 FAQ
+                <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full shrink-0">
+                  3
                 </span>
               </div>
 
               {/* FAQ 1 */}
-              <div className="border rounded-3xl overflow-hidden">
+              <div className="border rounded-2xl overflow-hidden">
                 <button
                   onClick={() => setOpenFaq(openFaq === 1 ? null : 1)}
                   className="
           w-full
-          p-5
+          p-3
           flex
           items-center
           justify-between
           bg-slate-50
+          gap-2
         "
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 rounded-lg bg-orange-100 text-orange-600 text-[10px] font-black">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="px-2 py-0.5 rounded-lg bg-orange-100 text-orange-600 text-[8px] font-black shrink-0">
                       PENJUAL
                     </span>
 
-                    <h4 className="font-black text-sm text-left">
+                    <h4 className="font-black text-xs text-left truncate">
                       CARA MENDAFTAR AKUN PENJUAL BARU
                     </h4>
                   </div>
 
                   <ChevronRight
-                    size={18}
-                    className={`duration-300 ${
+                    size={16}
+                    className={`duration-300 shrink-0 ${
                       openFaq === 1 ? "rotate-90" : ""
                     }`}
                   />
@@ -746,7 +770,7 @@ function PengaturanModal({
                       }}
                       className="overflow-hidden"
                     >
-                      <div className="p-5 text-sm text-slate-600 leading-7">
+                      <div className="p-3 text-xs text-slate-600 leading-5">
                         Masuk ke menu akun, lalu ketuk tombol "Buka Toko". Isi
                         formulir legalitas nama toko, detail alamat pengiriman,
                         dan rekening bank Anda.
@@ -757,31 +781,32 @@ function PengaturanModal({
               </div>
 
               {/* FAQ 2 */}
-              <div className="border rounded-3xl overflow-hidden">
+              <div className="border rounded-2xl overflow-hidden">
                 <button
                   onClick={() => setOpenFaq(openFaq === 2 ? null : 2)}
                   className="
           w-full
-          p-5
+          p-3
           flex
           items-center
           justify-between
           bg-slate-50
+          gap-2
         "
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 rounded-lg bg-blue-100 text-blue-600 text-[10px] font-black">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="px-2 py-0.5 rounded-lg bg-blue-100 text-blue-600 text-[8px] font-black shrink-0">
                       PEMBELI
                     </span>
 
-                    <h4 className="font-black text-sm text-left">
+                    <h4 className="font-black text-xs text-left truncate">
                       METODE PEMBAYARAN RESMI DI BELANJAIN
                     </h4>
                   </div>
 
                   <ChevronRight
-                    size={18}
-                    className={`duration-300 ${
+                    size={16}
+                    className={`duration-300 shrink-0 ${
                       openFaq === 2 ? "rotate-90" : ""
                     }`}
                   />
@@ -804,7 +829,7 @@ function PengaturanModal({
                       }}
                       className="overflow-hidden"
                     >
-                      <div className="p-5 text-sm text-slate-600 leading-7">
+                      <div className="p-3 text-xs text-slate-600 leading-5">
                         BelanjaIn mendukung pembayaran kartu kredit, virtual
                         account bank transfer, saldo Dompet BelanjaIn, serta
                         pembayaran instan QRIS.
@@ -815,31 +840,32 @@ function PengaturanModal({
               </div>
 
               {/* FAQ 3 */}
-              <div className="border rounded-3xl overflow-hidden">
+              <div className="border rounded-2xl overflow-hidden">
                 <button
                   onClick={() => setOpenFaq(openFaq === 3 ? null : 3)}
                   className="
           w-full
-          p-5
+          p-3
           flex
           items-center
           justify-between
           bg-slate-50
+          gap-2
         "
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 rounded-lg bg-orange-100 text-orange-600 text-[10px] font-black">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="px-2 py-0.5 rounded-lg bg-orange-100 text-orange-600 text-[8px] font-black shrink-0">
                       PENJUAL
                     </span>
 
-                    <h4 className="font-black text-sm text-left">
+                    <h4 className="font-black text-xs text-left truncate">
                       SISTEM PENCAIRAN SALDO PENGHASILAN
                     </h4>
                   </div>
 
                   <ChevronRight
-                    size={18}
-                    className={`duration-300 ${
+                    size={16}
+                    className={`duration-300 shrink-0 ${
                       openFaq === 3 ? "rotate-90" : ""
                     }`}
                   />
@@ -862,7 +888,7 @@ function PengaturanModal({
                       }}
                       className="overflow-hidden"
                     >
-                      <div className="p-5 text-sm text-slate-600 leading-7">
+                      <div className="p-3 text-xs text-slate-600 leading-5">
                         Penjual dapat mencairkan dana setelah status transaksi
                         selesai oleh pembeli. Proses pencairan memakan waktu
                         maksimal 1x24 jam kerja.
@@ -877,13 +903,15 @@ function PengaturanModal({
                 onClick={() => setActiveModal(null)}
                 className="
         w-full
-        h-14
+        h-12
         rounded-2xl
         bg-[#07142E]
         text-white
-        font-black
-        tracking-[3px]
+        font-bold
+        text-sm
+        tracking-wide
         hover:opacity-90
+        mt-2
       "
               >
                 KEMBALI
@@ -1275,7 +1303,7 @@ function PengaturanModal({
         "
                 >
                   <img
-                    src="/logo.png"
+                    src={logo}
                     alt="Logo"
                     className="w-16 h-16 object-contain"
                   />

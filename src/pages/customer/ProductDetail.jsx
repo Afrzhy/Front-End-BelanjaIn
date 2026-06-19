@@ -7,6 +7,9 @@ import {
   Share2,
   ArrowRight,
   ThumbsUp,
+  Store,
+  Trash2,
+  Clock,
 } from "lucide-react";
 
 import { useParams, useNavigate } from "react-router-dom";
@@ -25,6 +28,9 @@ function ProductDetail() {
   const [showCart, setShowCart] = useState(false);
   const [followedStores, setFollowedStores] = useState([]);
   const [wishlistItems, setWishlistItems] = useState([]);
+  const [wishlistDuration, setWishlistDuration] = useState({});
+  const [wishlistTimestamps, setWishlistTimestamps] = useState({});
+  const [wishlistCountdowns, setWishlistCountdowns] = useState({});
   const [cartItems, setCartItems] = useState([]);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewFilter, setReviewFilter] = useState(null);
@@ -47,10 +53,29 @@ function ProductDetail() {
   const total = subtotal + serviceFee;
 
   useEffect(() => {
-    const savedWishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    const wishlistKey = `wishlist_${currentUser?.id}`;
+
+    const savedWishlist = JSON.parse(localStorage.getItem(wishlistKey)) || [];
     setWishlistItems(savedWishlist);
 
-    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    // Initialize timestamps for items that don't have one
+    const timestamps =
+      JSON.parse(
+        localStorage.getItem(`wishlist_timestamps_${currentUser?.id}`),
+      ) || {};
+
+    savedWishlist.forEach((item) => {
+      if (!timestamps[item.id]) {
+        timestamps[item.id] = Date.now();
+      }
+    });
+
+    localStorage.setItem(
+      `wishlist_timestamps_${currentUser?.id}`,
+      JSON.stringify(timestamps),
+    );
+    setWishlistTimestamps(timestamps);
 
     if (currentUser) {
       const savedCart =
@@ -158,6 +183,47 @@ function ProductDetail() {
 
     return () => clearInterval(timer);
   }, []);
+
+  // ================= COUNTDOWN TIMER =================
+  useEffect(() => {
+    // Initial calculation
+    const calculateCountdowns = () => {
+      const newCountdowns = {};
+
+      wishlistItems.forEach((item) => {
+        const startTime = wishlistTimestamps[item.id] || Date.now();
+        const duration = (wishlistDuration[item.id] || 1) * 24 * 60 * 60 * 1000; // Convert days to ms
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, duration - elapsed);
+
+        // Calculate hours, days, minutes, seconds
+        const totalSeconds = Math.floor(remaining / 1000);
+        const days = Math.floor(totalSeconds / (24 * 3600));
+        const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        newCountdowns[item.id] = {
+          hours,
+          days,
+          minutes,
+          seconds,
+          formatted: `${days}D ${hours}H ${minutes}M ${seconds}S`,
+        };
+      });
+
+      setWishlistCountdowns(newCountdowns);
+    };
+
+    // Calculate immediately on first load
+    calculateCountdowns();
+
+    // Then set up interval for continuous updates
+    const timer = setInterval(calculateCountdowns, 1000);
+
+    return () => clearInterval(timer);
+  }, [wishlistItems, wishlistDuration, wishlistTimestamps]);
+
   const produkTokoSama = allProducts.filter(
     (p) => p.sellerId === product?.sellerId && p.id !== product?.id,
   );
@@ -214,7 +280,9 @@ function ProductDetail() {
   };
 
   const handleWishlist = () => {
-    const oldWishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    const wishlistKey = `wishlist_${currentUser?.id}`;
+    const oldWishlist = JSON.parse(localStorage.getItem(wishlistKey)) || [];
 
     const exist = oldWishlist.find((item) => item.id === product.id);
 
@@ -225,9 +293,26 @@ function ProductDetail() {
 
     const updatedWishlist = [...oldWishlist, product];
 
-    localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
+    localStorage.setItem(wishlistKey, JSON.stringify(updatedWishlist));
+
+    // Initialize timestamps
+    const timestamps =
+      JSON.parse(
+        localStorage.getItem(`wishlist_timestamps_${currentUser?.id}`),
+      ) || {};
+
+    if (!timestamps[product.id]) {
+      timestamps[product.id] = Date.now();
+    }
+
+    localStorage.setItem(
+      `wishlist_timestamps_${currentUser?.id}`,
+      JSON.stringify(timestamps),
+    );
 
     setWishlistItems(updatedWishlist);
+    setWishlistTimestamps(timestamps);
+    setWishlistDuration({ ...wishlistDuration, [product.id]: 1 });
 
     // langsung buka drawer
     setShowWishlist(true);
@@ -406,35 +491,6 @@ function ProductDetail() {
               Rp {product.price.toLocaleString("id-ID")}
             </h2>
 
-            {/* STORE */}
-            <div className="flex items-center justify-between border rounded-xl p-3 mt-6 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
-                  {product.store.charAt(0)}
-                </div>
-
-                <div>
-                  <button
-                    onClick={() => navigate(`/customer/store/${seller?.id}`)}
-                    className="font-bold hover:text-indigo-600"
-                  >
-                    {product.store}
-                  </button>
-                  <p className="text-xs text-slate-500">Official Store</p>
-                </div>
-              </div>
-
-              <button
-                onClick={handleFollow}
-                className={`
-    px-5 py-2 rounded-xl font-bold text-sm transition
-    ${isFollowed ? "bg-green-100 text-green-600" : "bg-indigo-600 text-white"}
-  `}
-              >
-                {isFollowed ? "Followed" : "Follow"}
-              </button>
-            </div>
-
             {/* TABS */}
             <div className="flex gap-8 border-b mt-8">
               {["deskripsi", "info", "ulasan"].map((tab) => (
@@ -570,13 +626,34 @@ function ProductDetail() {
                                 <p className="text-slate-600 mt-2 text-xs">
                                   {review.comment}
                                 </p>
-                                <p className="text-slate-400 text-xs mt-2">
+
+                                {/* Review Images */}
+                                {review.images && review.images.length > 0 && (
+                                  <div className="mt-3 grid grid-cols-5 gap-2">
+                                    {review.images.map((image, idx) => (
+                                      <div
+                                        key={`${review.id}-${idx}`}
+                                        className="rounded-lg overflow-hidden bg-slate-100 aspect-square cursor-pointer hover:shadow-lg transition-shadow"
+                                        onClick={() => setShowReviewModal(true)}
+                                      >
+                                        <img
+                                          src={image}
+                                          alt={`Review from ${review.reviewerName}`}
+                                          className="w-full h-full object-cover hover:scale-110 transition-transform"
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                <p className="text-slate-400 text-xs mt-3">
                                   {review.date}
                                 </p>
                               </div>
                             </div>
                             {review.helpful > 0 && (
-                              <div className="mt-2 text-xs text-slate-500">
+                              <div className="mt-3 text-xs text-slate-500 flex items-center gap-1">
+                                <ThumbsUp size={14} />
                                 {review.helpful} orang merasa membantu
                               </div>
                             )}
@@ -600,6 +677,37 @@ function ProductDetail() {
                   )}
                 </div>
               )}
+            </div>
+
+            {/* ================= STORE INFO ================= */}
+            <div className="mt-8 pt-6 border-t">
+              <div className="flex items-center justify-between border rounded-xl p-3 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
+                    {product.store.charAt(0)}
+                  </div>
+
+                  <div>
+                    <button
+                      onClick={() => navigate(`/customer/store/${seller?.id}`)}
+                      className="font-bold hover:text-indigo-600"
+                    >
+                      {product.store}
+                    </button>
+                    <p className="text-xs text-slate-500">Official Store</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleFollow}
+                  className={`
+      px-5 py-2 rounded-xl font-bold text-sm transition
+      ${isFollowed ? "bg-green-100 text-green-600" : "bg-indigo-600 text-white"}
+    `}
+                >
+                  {isFollowed ? "Followed" : "Follow"}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -761,23 +869,31 @@ function ProductDetail() {
             {allProducts.slice(0, 5).map((item) => (
               <div
                 key={item.id}
-                onClick={() => navigate(`/customer/product-detail/${item.id}`)}
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  setTimeout(() => {
+                    navigate(`/customer/product-detail/${item.id}`);
+                  }, 300);
+                }}
                 className="
         bg-white
         border
         rounded-3xl
         overflow-hidden
         cursor-pointer
-        hover:shadow-xl
-        transition
+        hover:shadow-2xl
+        transition-all
+        duration-300
+        hover:-translate-y-2
+        hover:scale-105
         "
               >
-                <div className="relative">
+                <div className="relative overflow-hidden rounded-2xl">
                   {isValidImageUrl(item.image) && (
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-full h-64 object-cover"
+                      className="w-full h-64 object-cover transition-transform duration-300 hover:scale-110"
                     />
                   )}
 
@@ -851,21 +967,27 @@ function ProductDetail() {
               bg-white
               shadow-2xl
               z-[999]
-              p-6
               overflow-y-auto
             "
             >
               {/* HEADER */}
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-black">Wishlist</h2>
+              <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Heart size={28} className="text-red-500 fill-red-500" />
+                  <h2 className="text-xl font-black">WISHLIST SAYA</h2>
+                </div>
 
                 <button
                   onClick={() => setShowWishlist(false)}
                   className="
-                  w-10
-                  h-10
-                  rounded-xl
-                  bg-slate-100
+                  w-8
+                  h-8
+                  rounded-lg
+                  flex
+                  items-center
+                  justify-center
+                  hover:bg-slate-100
+                  text-slate-500
                 "
                 >
                   ✕
@@ -882,6 +1004,7 @@ function ProductDetail() {
                   justify-center
                   py-24
                   text-center
+                  px-6
                 "
                 >
                   <div
@@ -943,130 +1066,216 @@ function ProductDetail() {
               )}
 
               {/* LIST */}
-              <div className="space-y-4">
+              <div className="p-6 space-y-4">
                 {wishlistItems.map((item) => (
                   <div
                     key={item.id}
                     className="
                     border
-                    rounded-3xl
-                    p-3
-                    flex
-                    gap-3
+                    rounded-2xl
+                    p-4
                     bg-white
+                    shadow-sm
+                    hover:shadow-md
+                    transition-shadow
                   "
                   >
-                    {isValidImageUrl(item.image) && (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="
-                        w-24
-                        h-24
-                        rounded-2xl
-                      object-cover
-                    "
-                      />
-                    )}
-
-                    <div className="flex-1">
-                      <h3
-                        className="
-                        font-black
-                        line-clamp-2
-                      "
-                      >
-                        {item.name}
-                      </h3>
-
-                      <p
-                        className="
-                        text-blue-600
-                        font-black
-                        mt-2
-                      "
-                      >
-                        Rp {item.price.toLocaleString("id-ID")}
-                      </p>
-
-                      <div className="flex gap-2 mt-4">
-                        {/* TAMBAH CART */}
-                        <button
-                          onClick={() => {
-                            const currentUser = JSON.parse(
-                              localStorage.getItem("currentUser"),
-                            );
-
-                            const oldCart =
-                              JSON.parse(
-                                localStorage.getItem(`cart_${currentUser.id}`),
-                              ) || [];
-
-                            const isExist = oldCart.find(
-                              (cartItem) => cartItem.id === item.id,
-                            );
-
-                            let updatedCart = oldCart;
-
-                            if (!isExist) {
-                              updatedCart = [...oldCart, item];
-
-                              localStorage.setItem(
-                                `cart_${currentUser.id}`,
-                                JSON.stringify(updatedCart),
-                              );
-
-                              setCartItems(updatedCart);
-                            }
-
-                            const updatedWishlist = wishlistItems.filter(
-                              (wishlistItem) => wishlistItem.id !== item.id,
-                            );
-
-                            setWishlistItems(updatedWishlist);
-
-                            localStorage.setItem(
-                              "wishlist",
-                              JSON.stringify(updatedWishlist),
-                            );
-                          }}
-                          className="
-                          flex-1
-                          h-11
-                          rounded-xl
-                          bg-blue-600
-                          text-white
-                          font-bold
-                        "
-                        >
-                          Keranjang
-                        </button>
-
-                        {/* HAPUS */}
-                        <button
-                          onClick={() => {
-                            const updated = wishlistItems.filter(
-                              (wishlistItem) => wishlistItem.id !== item.id,
-                            );
-
-                            setWishlistItems(updated);
-
-                            localStorage.setItem(
-                              "wishlist",
-                              JSON.stringify(updated),
-                            );
-                          }}
-                          className="
-                          w-11
-                          h-11
-                          rounded-xl
-                          bg-red-50
-                          text-red-500
-                        "
-                        >
-                          ✕
-                        </button>
+                    {/* PRODUCT IMAGE */}
+                    <div className="flex gap-4 mb-3">
+                      <div className="relative">
+                        {isValidImageUrl(item.image) && (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="
+                            w-28
+                            h-28
+                            rounded-xl
+                            object-cover
+                            bg-slate-100
+                          "
+                          />
+                        )}
                       </div>
+
+                      <div className="flex-1 flex flex-col">
+                        {/* STORE INFO */}
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Store size={14} className="text-slate-400" />
+                          <span className="text-xs font-bold text-blue-600">
+                            {item.store?.toUpperCase()}
+                          </span>
+                        </div>
+
+                        {/* PRODUCT NAME */}
+                        <h3 className="font-bold text-sm line-clamp-2 mb-2">
+                          {item.name}
+                        </h3>
+
+                        {/* PRICE */}
+                        <p className="text-lg font-black text-blue-600">
+                          Rp {item.price.toLocaleString("id-ID")}
+                        </p>
+
+                        {/* MODE/STATUS */}
+                        {item.mode && (
+                          <div className="mt-2 flex items-center gap-1.5 bg-orange-100 text-orange-700 px-2 py-1 rounded-lg w-fit">
+                            <Clock size={12} />
+                            <span className="text-xs font-bold">
+                              {item.mode === "FLASH" ? "⏱️ " : ""}
+                              {wishlistCountdowns[item.id]?.formatted ||
+                                "0D 0H 0M 0S"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* DURATION SLIDER */}
+                    <div className="mb-4">
+                      <label className="text-xs font-bold text-slate-600 block mb-2">
+                        DURASI SIMPAN ({wishlistDuration[item.id] || 1}-10 HARI)
+                      </label>
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        value={wishlistDuration[item.id] || 1}
+                        onChange={(e) =>
+                          setWishlistDuration({
+                            ...wishlistDuration,
+                            [item.id]: parseInt(e.target.value),
+                          })
+                        }
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      />
+                    </div>
+
+                    {/* BUTTONS */}
+                    <div className="flex gap-2">
+                      {/* TAMBAH CART */}
+                      <button
+                        onClick={() => {
+                          const currentUser = JSON.parse(
+                            localStorage.getItem("currentUser"),
+                          );
+
+                          const oldCart =
+                            JSON.parse(
+                              localStorage.getItem(`cart_${currentUser.id}`),
+                            ) || [];
+
+                          const isExist = oldCart.find(
+                            (cartItem) => cartItem.id === item.id,
+                          );
+
+                          let updatedCart = oldCart;
+
+                          if (!isExist) {
+                            updatedCart = [
+                              ...oldCart,
+                              {
+                                ...item,
+                                qty: 1,
+                              },
+                            ];
+
+                            localStorage.setItem(
+                              `cart_${currentUser.id}`,
+                              JSON.stringify(updatedCart),
+                            );
+
+                            setCartItems(updatedCart);
+                          }
+
+                          const updatedWishlist = wishlistItems.filter(
+                            (wishlistItem) => wishlistItem.id !== item.id,
+                          );
+
+                          setWishlistItems(updatedWishlist);
+
+                          // Remove timestamp for moved item
+                          const timestamps =
+                            JSON.parse(
+                              localStorage.getItem(
+                                `wishlist_timestamps_${currentUser.id}`,
+                              ),
+                            ) || {};
+                          delete timestamps[item.id];
+                          localStorage.setItem(
+                            `wishlist_timestamps_${currentUser.id}`,
+                            JSON.stringify(timestamps),
+                          );
+                          setWishlistTimestamps(timestamps);
+
+                          const wishlistKey = `wishlist_${currentUser.id}`;
+                          localStorage.setItem(
+                            wishlistKey,
+                            JSON.stringify(updatedWishlist),
+                          );
+                        }}
+                        className="
+                        flex-1
+                        h-11
+                        rounded-xl
+                        bg-blue-600
+                        text-white
+                        font-bold
+                        text-sm
+                        hover:bg-blue-700
+                        transition
+                      "
+                      >
+                        Tambah ke Keranjang
+                      </button>
+
+                      {/* HAPUS */}
+                      <button
+                        onClick={() => {
+                          const updated = wishlistItems.filter(
+                            (wishlistItem) => wishlistItem.id !== item.id,
+                          );
+
+                          setWishlistItems(updated);
+
+                          // Remove timestamp for deleted item
+                          const currentUser = JSON.parse(
+                            localStorage.getItem("currentUser"),
+                          );
+                          const timestamps =
+                            JSON.parse(
+                              localStorage.getItem(
+                                `wishlist_timestamps_${currentUser?.id}`,
+                              ),
+                            ) || {};
+                          delete timestamps[item.id];
+                          localStorage.setItem(
+                            `wishlist_timestamps_${currentUser?.id}`,
+                            JSON.stringify(timestamps),
+                          );
+                          setWishlistTimestamps(timestamps);
+
+                          const wishlistKey = `wishlist_${currentUser?.id}`;
+                          localStorage.setItem(
+                            wishlistKey,
+                            JSON.stringify(updated),
+                          );
+                        }}
+                        className="
+                        w-11
+                        h-11
+                        rounded-xl
+                        bg-red-50
+                        text-red-500
+                        flex
+                        items-center
+                        justify-center
+                        hover:bg-red-100
+                        transition
+                      "
+                      >
+                        <Trash2 size={18} />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -1077,141 +1286,464 @@ function ProductDetail() {
         {/* ================= CART DRAWER ================= */}
         {showCart && (
           <>
+            {/* OVERLAY */}
             <div
               onClick={() => setShowCart(false)}
-              className="fixed inset-0 bg-black/40 z-[998]"
+              className="
+              fixed
+              inset-0
+              bg-black/40
+              z-[998]
+            "
             />
 
+            {/* DRAWER */}
             <div
               className="
-      fixed
-      top-0
-      right-0
-      w-[420px]
-      h-screen
-      bg-white
-      shadow-2xl
-      z-[999]
-      p-6
-      overflow-y-auto
-    "
+              fixed
+              top-0
+              right-0
+              w-[420px]
+              h-screen
+              bg-white
+              shadow-2xl
+              z-[999]
+              p-6
+              overflow-y-auto
+            "
             >
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-black">Keranjang</h2>
+              {/* HEADER */}
+              <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-5 flex items-center justify-between z-10">
+                <div className="flex items-center gap-4">
+                  <div
+                    className="
+        w-12
+        h-12
+        rounded-2xl
+        bg-blue-600
+        text-white
+        flex
+        items-center
+        justify-center
+        shadow-lg
+      "
+                  >
+                    <ShoppingCart size={22} />
+                  </div>
 
-                  <p className="text-slate-400 text-sm font-bold mt-1">
-                    {cartItems.length} ITEM
-                  </p>
+                  <div>
+                    <h2 className="text-[20px] font-black text-slate-900">
+                      Keranjang Belanja
+                    </h2>
+
+                    <p
+                      className="
+  inline-flex
+  items-center
+  gap-1.5
+  px-2.5
+  py-1
+  rounded-full
+  bg-slate-100
+  text-[11px]
+  font-bold
+  text-slate-500
+  uppercase
+"
+                    >
+                      {cartItems.length} Item Terpilih
+                    </p>
+                  </div>
                 </div>
 
                 <button
                   onClick={() => setShowCart(false)}
-                  className="w-10 h-10 rounded-xl bg-slate-100"
+                  className="
+      text-slate-400
+      hover:text-slate-700
+      text-3xl
+    "
                 >
                   ✕
                 </button>
               </div>
 
-              {cartItems.map((item) => (
+              {/* EMPTY */}
+              {cartItems.length === 0 && (
                 <div
-                  key={item.id}
-                  className="border rounded-3xl p-3 flex gap-3 mb-4"
+                  className="
+                  h-[75vh]
+                  flex
+                  flex-col
+                  items-center
+                  justify-center
+                  text-center
+                "
                 >
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-24 h-24 rounded-2xl object-cover"
-                  />
+                  <div
+                    className="
+                    w-28
+                    h-28
+                    rounded-full
+                    bg-slate-100
+                    flex
+                    items-center
+                    justify-center
+                    mb-8
+                  "
+                  >
+                    <ShoppingCart size={50} className="text-slate-300" />
+                  </div>
 
-                  <div className="flex-1">
-                    <h3 className="font-black">{item.name}</h3>
+                  <h3
+                    className="
+                    text-3xl
+                    font-black
+                  "
+                  >
+                    KERANJANG KOSONG
+                  </h3>
 
-                    <p className="text-blue-600 font-black mt-2">
-                      Rp {item.price.toLocaleString("id-ID")}
-                    </p>
+                  <p
+                    className="
+                    text-slate-500
+                    mt-4
+                    max-w-[300px]
+                  "
+                  >
+                    Tambahkan produk favoritmu ke keranjang untuk checkout.
+                  </p>
 
-                    <p className="text-sm text-slate-500 mt-1">
-                      Qty : {item.qty || 1}
-                    </p>
+                  <button
+                    onClick={() => {
+                      setShowCart(false);
+
+                      document.getElementById("products")?.scrollIntoView({
+                        behavior: "smooth",
+                      });
+                    }}
+                    className="
+                    mt-8
+                    px-10
+                    h-14
+                    rounded-2xl
+                    bg-blue-600
+                    text-white
+                    font-black
+                  "
+                  >
+                    Belanja Sekarang
+                  </button>
+                </div>
+              )}
+
+              {/* LIST */}
+              <div className="p-6 space-y-4">
+                {cartItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="
+    bg-white
+    py-4
+    border-b
+    border-slate-100
+  "
+                  >
+                    <div className="flex gap-4">
+                      {/* IMAGE */}
+                      {isValidImageUrl(item.image) && (
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="
+      w-[120px]
+      h-[120px]
+      rounded-3xl
+      object-cover
+      bg-slate-100
+      shrink-0
+    "
+                        />
+                      )}
+
+                      <div className="flex-1">
+                        {/* TOP */}
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div
+                              className="
+            inline-flex
+            items-center
+            gap-2
+            px-3
+            py-1
+            rounded-full
+            bg-slate-100
+            text-[12px]
+            font-black
+            text-slate-600
+            uppercase
+          "
+                            >
+                              🔵 {item.store}
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              const updated = cartItems.filter(
+                                (cartItem) => cartItem.id !== item.id,
+                              );
+
+                              setCartItems(updated);
+
+                              const currentUser = JSON.parse(
+                                localStorage.getItem("currentUser"),
+                              );
+
+                              localStorage.setItem(
+                                `cart_${currentUser.id}`,
+                                JSON.stringify(updated),
+                              );
+                            }}
+                            className="
+          text-slate-300
+          hover:text-red-500
+        "
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+
+                        {/* TITLE */}
+                        <h3
+                          className="
+  mt-2
+  text-[15px]
+  leading-tight
+  font-extrabold
+  text-slate-900
+  line-clamp-2
+"
+                        >
+                          {item.name}
+                        </h3>
+
+                        {/* CATEGORY */}
+                        <p
+                          className="
+  text-[11px]
+  uppercase
+  font-semibold
+  text-slate-400
+  mt-1
+"
+                        >
+                          {item.category}
+                        </p>
+
+                        {/* BOTTOM */}
+                        <div className="mt-3 flex items-center gap-3">
+                          <p
+                            className="
+    flex-1
+    text-[14px]
+    font-extrabold
+    text-blue-600
+    whitespace-nowrap
+  "
+                          >
+                            Rp {item.price.toLocaleString("id-ID")}
+                          </p>
+
+                          <div
+                            className="
+    flex
+    items-center
+    justify-between
+    w-[105px]
+    h-[38px]
+    px-2
+    bg-slate-100
+    rounded-full
+    shrink-0
+  "
+                          >
+                            <button
+                              onClick={() => {
+                                const updated = cartItems.map((cartItem) =>
+                                  cartItem.id === item.id
+                                    ? {
+                                        ...cartItem,
+                                        qty: Math.max(
+                                          1,
+                                          (cartItem.qty || 1) - 1,
+                                        ),
+                                      }
+                                    : cartItem,
+                                );
+
+                                setCartItems(updated);
+
+                                const currentUser = JSON.parse(
+                                  localStorage.getItem("currentUser"),
+                                );
+
+                                localStorage.setItem(
+                                  `cart_${currentUser.id}`,
+                                  JSON.stringify(updated),
+                                );
+                              }}
+                              className="
+      w-6
+      h-6
+      flex
+      items-center
+      justify-center
+      text-slate-400
+      hover:text-slate-700
+      font-bold
+      text-sm
+    "
+                            >
+                              −
+                            </button>
+
+                            <span
+                              className="
+      w-5
+      text-center
+      text-sm
+      font-bold
+      text-slate-900
+    "
+                            >
+                              {item.qty || 1}
+                            </span>
+
+                            <button
+                              onClick={() => {
+                                const updated = cartItems.map((cartItem) =>
+                                  cartItem.id === item.id
+                                    ? {
+                                        ...cartItem,
+                                        qty: (cartItem.qty || 1) + 1,
+                                      }
+                                    : cartItem,
+                                );
+
+                                setCartItems(updated);
+
+                                const currentUser = JSON.parse(
+                                  localStorage.getItem("currentUser"),
+                                );
+
+                                localStorage.setItem(
+                                  `cart_${currentUser.id}`,
+                                  JSON.stringify(updated),
+                                );
+                              }}
+                              className="
+      w-6
+      h-6
+      flex
+      items-center
+      justify-center
+      text-blue-600
+      hover:text-blue-800
+      font-bold
+      text-sm
+    "
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* TOTAL */}
+              {cartItems.length > 0 && (
+                <div
+                  className="
+    sticky
+    bottom-0
+    bg-white
+    border-t
+    border-slate-200
+    p-6
+  "
+                >
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-bold">Subtotal</span>
+
+                      <span className="font-black text-slate-600">
+                        Rp {subtotal.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-bold">
+                        Biaya Layanan
+                      </span>
+
+                      <span className="font-black text-slate-600">
+                        Rp {serviceFee.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+
+                    <div className="border-t pt-5 flex justify-between">
+                      <span
+                        className="
+          text-[18px]
+          font-black
+          uppercase
+          tracking-wider
+        "
+                      >
+                        TOTAL BAYAR
+                      </span>
+
+                      <span
+                        className="
+          text-[22px]
+          font-black
+          text-blue-600
+        "
+                      >
+                        Rp {total.toLocaleString("id-ID")}
+                      </span>
+                    </div>
 
                     <button
                       onClick={() => {
-                        const updated = cartItems.filter(
-                          (cartItem) => cartItem.id !== item.id,
-                        );
-
-                        setCartItems(updated);
-
-                        const currentUser = JSON.parse(
-                          localStorage.getItem("currentUser"),
-                        );
-
-                        localStorage.setItem(
-                          `cart_${currentUser.id}`,
-                          JSON.stringify(updated),
-                        );
+                        setShowCart(false);
+                        navigate("/customer/checkout");
                       }}
                       className="
-              mt-3
-              w-full
-              h-10
-              rounded-xl
-              bg-red-50
-              text-red-500
-              font-bold
-            "
+    w-full
+    h-[58px]
+    rounded-[20px]
+    bg-blue-600
+    hover:bg-blue-700
+    text-white
+    text-[18px]
+    font-black
+    flex
+    items-center
+    justify-center
+    gap-3
+    transition
+  "
                     >
-                      Hapus
+                      Lanjut ke Pembayaran
+                      <ArrowRight size={20} />
                     </button>
                   </div>
-                </div>
-              ))}
-
-              {cartItems.length > 0 && (
-                <div className="border-t pt-6 mt-6">
-                  <div className="flex justify-between mb-3">
-                    <span>Subtotal</span>
-
-                    <span className="font-black">
-                      Rp {subtotal.toLocaleString("id-ID")}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between mb-3">
-                    <span>Biaya Layanan</span>
-
-                    <span className="font-black">
-                      Rp {serviceFee.toLocaleString("id-ID")}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between mb-6">
-                    <span className="text-xl font-black">TOTAL</span>
-
-                    <span className="text-2xl font-black text-blue-600">
-                      Rp {total.toLocaleString("id-ID")}
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={() => navigate("/customer/checkout")}
-                    className="
-            w-full
-            h-14
-            rounded-2xl
-            bg-blue-600
-            text-white
-            font-black
-            flex
-            items-center
-            justify-center
-            gap-2
-          "
-                  >
-                    Lanjut ke Pembayaran
-                    <ArrowRight size={20} />
-                  </button>
                 </div>
               )}
             </div>
